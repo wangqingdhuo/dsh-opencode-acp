@@ -41,7 +41,7 @@ From the DSH Plugins page, or from a terminal:
 dsh plugin --profile default add dsh-opencode-acp
 
 # or from a tarball
-dsh plugin --profile default add ./dsh-opencode-acp-0.1.2.tgz
+dsh plugin --profile default add ./dsh-opencode-acp-0.1.1.tgz
 ```
 
 Then restart or refresh DSH. Two things appear:
