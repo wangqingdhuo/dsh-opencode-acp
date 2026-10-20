@@ -33,7 +33,7 @@ opencode，由它用**自己的模型、工具和免费额度**干活，只把�
 dsh plugin --profile default add dsh-opencode-acp
 
 # 或者从 tarball
-dsh plugin --profile default add ./dsh-opencode-acp-0.1.0.tgz
+dsh plugin --profile default add ./dsh-opencode-acp-0.1.1.tgz
 ```
 
 装完重启或刷新 DSH，会出现两样东西：
@@ -90,8 +90,9 @@ DSH agent ── subagent_opencode ──► ctx.subagents ──► dsh-opencod
 
 - 只回传 assistant 文本；opencode 的工具调用、思考、计划都留在它自己的会话里。
 - 每次运行新起一个进程，有数秒启动开销。
-- Windows / macOS / Linux 都支持；默认命令路径是 Windows 的，其他平台请在
-  **高级 → 启动命令** 改成你自己的 `opencode` 可执行文件。
+- Windows / macOS / Linux 都支持。默认命令在 Windows 上是 npm 全局安装的
+  `%APPDATA%\npm\node_modules\@opencode\cli\bin\opencode.exe`，其他平台是 `PATH` 里的
+  `opencode`；装法不同就在 **高级 → 启动命令** 改掉。
 
 ## 卸载
 

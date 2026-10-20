@@ -26,8 +26,14 @@ export const inject = ['subagents', 'subprocess']
 const ROUTE_PREFIX = '/.dsh-opencode-acp'
 const PROVIDER_NAME = 'opencode'
 const MAX_RUNS = 100
-const DEFAULT_COMMAND =
-  'C:\\Users\\XWZJ93\\AppData\\Roaming\\npm\\node_modules\\@opencode\\cli\\bin\\opencode.exe'
+/** npm's global install of opencode on Windows; a bare name elsewhere. */
+function defaultCommand() {
+  if (process.platform === 'win32' && typeof process.env.APPDATA === 'string') {
+    return path.join(process.env.APPDATA, 'npm', 'node_modules', '@opencode', 'cli', 'bin', 'opencode.exe')
+  }
+  return 'opencode'
+}
+
 const DEFAULT_MODEL = 'opencode/deepseek-v4.1-flash-free'
 const FALLBACK_MODELS = [
   'opencode/deepseek-v4.1-flash-free',
@@ -42,7 +48,7 @@ const DEFAULT_SETTINGS = {
   permission: 'allow',
   cwdMode: 'inherit',
   cwdFixed: '',
-  command: DEFAULT_COMMAND,
+  command: defaultCommand(),
   args: ['acp'],
   env: {},
   graceMs: 6000,

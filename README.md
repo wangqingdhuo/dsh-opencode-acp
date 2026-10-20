@@ -41,7 +41,7 @@ From the DSH Plugins page, or from a terminal:
 dsh plugin --profile default add dsh-opencode-acp
 
 # or from a tarball
-dsh plugin --profile default add ./dsh-opencode-acp-0.1.0.tgz
+dsh plugin --profile default add ./dsh-opencode-acp-0.1.1.tgz
 ```
 
 Then restart or refresh DSH. Two things appear:
@@ -101,8 +101,9 @@ DSH agent ── subagent_opencode ──► ctx.subagents ──► dsh-opencod
 - Only assistant text is returned; opencode's tool traffic, reasoning and plans stay in its own
   session.
 - A fresh process per run: expect a few seconds of startup on every delegation.
-- Windows, macOS and Linux are all supported; the default command path is Windows-specific, so on
-  other platforms set **Advanced → command** to your `opencode` executable.
+- Windows, macOS and Linux are all supported. The default command is the npm-global opencode on
+  Windows (`%APPDATA%\npm\node_modules\@opencode\cli\bin\opencode.exe`) and `opencode` on `PATH`
+  elsewhere; override **Advanced → command** if your install differs.
 
 ## Uninstall
 
