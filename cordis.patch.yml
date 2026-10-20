@@ -1,0 +1,24 @@
+# Installed by the dsh-opencode-acp bundle:
+#   1. `dsh-opencode-acp` — the Host plugin: an ACP client that drives
+#      `opencode acp` in a subprocess, plus the settings page's JSON routes and
+#      run history;
+#   2. `tool-subagent-opencode` — the model-facing delegation tool that calls it.
+#
+# Both rows live in the Host plane. The subagent registry and its backends are
+# host singletons (see dsh-web-app/cordis.patch.yml), and a host-level tool row
+# joins the tools registry's global layer, so every agent in this profile sees
+# `subagent_opencode` without a per-preset declaration.
+#
+# The provider advertises no start-time capabilities, so the tool must not send
+# a numeric depth cap: `provider-managed` is the only valid choice here.
+
+- insert:
+    - id: opencode-acp
+      name: 'dsh-opencode-acp'
+
+    - id: tool-subagent-opencode
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: opencode
+        toolName: subagent_opencode
+        maxDepth: provider-managed

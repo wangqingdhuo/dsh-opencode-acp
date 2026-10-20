@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "OpenCode ACP 委派",
+    "description": "把 opencode 作为 ACP 子进程接成子代理，并新增 subagent_opencode 委派工具，使用 opencode 的免费模型。"
+  }
+}

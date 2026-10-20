@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "OpenCode ACP Delegation",
+    "description": "Runs opencode as an ACP subagent process and adds a subagent_opencode delegation tool that uses opencode's free models."
+  }
+}

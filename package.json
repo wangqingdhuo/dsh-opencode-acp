@@ -1,0 +1,56 @@
+{
+  "name": "dsh-opencode-acp",
+  "version": "0.1.0",
+  "description": "Run opencode as an ACP subagent inside DeepSeek Harness: a delegation tool, a settings page, and a run history with opencode session ids and token usage.",
+  "type": "module",
+  "license": "MIT",
+  "author": "dsh-opencode-acp contributors",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "deepseek",
+    "plugin",
+    "opencode",
+    "acp",
+    "agent-client-protocol",
+    "subagent",
+    "delegation"
+  ],
+  "engines": {
+    "dsh": ">=0.2.1-rc.1 <0.3.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YOUR_GITHUB/dsh-opencode-acp.git"
+  },
+  "homepage": "https://github.com/YOUR_GITHUB/dsh-opencode-acp#readme",
+  "bugs": {
+    "url": "https://github.com/YOUR_GITHUB/dsh-opencode-acp/issues"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "README.zh.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true
+    }
+  }
+}
