@@ -22,11 +22,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/YOUR_GITHUB/dsh-opencode-acp.git"
+    "url": "git+https://github.com/wangqingdhuo/dsh-opencode-acp.git"
   },
-  "homepage": "https://github.com/YOUR_GITHUB/dsh-opencode-acp#readme",
+  "homepage": "https://github.com/wangqingdhuo/dsh-opencode-acp#readme",
   "bugs": {
-    "url": "https://github.com/YOUR_GITHUB/dsh-opencode-acp/issues"
+    "url": "https://github.com/wangqingdhuo/dsh-opencode-acp/issues"
   },
   "exports": {
     ".": "./index.js",
@@ -54,3 +54,4 @@
     }
   }
 }
+
