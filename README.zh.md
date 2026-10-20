@@ -33,7 +33,7 @@ opencode，由它用**自己的模型、工具和免费额度**干活，只把�
 dsh plugin --profile default add dsh-opencode-acp
 
 # 或者从 tarball
-dsh plugin --profile default add ./dsh-opencode-acp-0.1.1.tgz
+dsh plugin --profile default add ./dsh-opencode-acp-0.1.2.tgz
 ```
 
 装完重启或刷新 DSH，会出现两样东西：

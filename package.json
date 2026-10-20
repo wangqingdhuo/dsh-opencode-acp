@@ -1,6 +1,6 @@
 {
   "name": "dsh-opencode-acp",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Run opencode as an ACP subagent inside DeepSeek Harness: a delegation tool, a settings page, and a run history with opencode session ids and token usage.",
   "type": "module",
   "license": "MIT",
@@ -54,4 +54,3 @@
     }
   }
 }
-
