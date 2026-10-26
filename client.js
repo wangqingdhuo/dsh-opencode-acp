@@ -186,6 +186,7 @@ window.__ModuleLoader__.load({
       const [error, setError] = useState('')
       const [busy, setBusy] = useState('')
       const [health, setHealth] = useState(null)
+      const [probe, setProbe] = useState(null)
       const [openRun, setOpenRun] = useState(null)
 
       const load = useCallback(async () => {
@@ -252,6 +253,23 @@ window.__ModuleLoader__.load({
         }
       }
 
+      const runProbe = async () => {
+        setBusy('probe')
+        setError('')
+        setProbe(null)
+        try {
+          const result = await call(`${PREFIX}/probe`, {
+            method: 'POST',
+            body: JSON.stringify({ model: draft.model }),
+          })
+          setProbe(result)
+        } catch (cause) {
+          setError(cause instanceof Error ? cause.message : String(cause))
+        } finally {
+          setBusy('')
+        }
+      }
+
       const clearRuns = async () => {
         setBusy('clear')
         try {
@@ -299,13 +317,31 @@ window.__ModuleLoader__.load({
           Section,
           {
             title: '模型',
-            hint: 'opencode 侧的模型选择：ACP 协议不带模型参数，所以在这里改，并通过 OPENCODE_CONFIG_CONTENT 注入子进程。',
+            hint: 'opencode 侧的模型选择：ACP 协议不带模型参数，所以在这里改，并通过 OPENCODE_CONFIG_CONTENT 注入子进程。免费额度按账号走，哪个模型此刻能用可以用「测试当前模型」当场问。',
             extra: h(
-              'button',
-              { style: S.button, onClick: runHealth, disabled: busy !== '' },
-              busy === 'health' ? '检查中…' : '健康检查',
+              'div',
+              { style: { display: 'flex', gap: 8 } },
+              h(
+                'button',
+                { style: S.button, onClick: runProbe, disabled: busy !== '' },
+                busy === 'probe' ? '测试中…' : '测试当前模型',
+              ),
+              h(
+                'button',
+                { style: S.button, onClick: runHealth, disabled: busy !== '' },
+                busy === 'health' ? '检查中…' : '健康检查',
+              ),
             ),
           },
+          probe !== null
+            ? h(
+                'p',
+                { style: { ...S.hint, color: probe.ok ? T.ok : T.err } },
+                probe.ok
+                  ? `模型可用：${probe.model}（${probe.ms}ms）`
+                  : `模型不可用：${probe.model} — ${probe.errorName ? `${probe.errorName}：` : ''}${probe.detail ?? '未知原因'}`,
+              )
+            : null,
           health !== null
             ? h(
                 'p',

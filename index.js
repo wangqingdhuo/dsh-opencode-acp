@@ -42,12 +42,20 @@ function defaultCommand() {
 }
 
 const DEFAULT_MODEL = 'opencode/deepseek-v4.1-flash-free'
+/*
+ * Free-tier ids that exist in opencode's catalog. Kept here so the picker shows
+ * them even on a machine that has never run them; availability still varies
+ * (per-account free quota, model endpoints), which is what 测试当前模型 answers.
+ */
 const FALLBACK_MODELS = [
+  'opencode-go/iceman-contributor-free',
   'opencode/deepseek-v4.1-flash-free',
-  'opencode/minimax-m3.1-flash-free',
-  'opencode/step-5-preview-free',
+  'opencode/glm-5.3-flash-free',
   'opencode/mimo-v2.6-flash-free',
-  'opencode/mimo-v2.5-free',
+  'opencode/flint-40b-free',
+  'opencode/nemotron-3.5-lightning-free',
+  'opencode/nemotron-3-ultra-free',
+  'opencode/beam-free',
 ]
 const DEFAULT_SETTINGS = {
   model: DEFAULT_MODEL,
@@ -637,6 +645,147 @@ async function probeVersion(ctx, settings) {
   return { ok: version !== '', version }
 }
 
+/**
+ * One throwaway ACP run against one model: `initialize`, `session/new`, and a
+ * one-word prompt. Free tiers expire per account and model endpoints disappear
+ * without notice, so "does this model answer right now" has to be asked, not
+ * inferred from the catalog.
+ */
+async function probeModel(ctx, settings, model) {
+  const startedAt = Date.now()
+  const env = { ...process.env, ...settings.env }
+  const inline = { autoupdate: false }
+  if (model !== '') inline.model = model
+  env.OPENCODE_CONFIG_CONTENT = JSON.stringify(inline)
+
+  let child
+  try {
+    child = ctx.subprocess.spawn({
+      argv: [settings.command, ...settings.args],
+      cwd: homeDirectory(),
+      stdio: { stdin: 'pipe', stdout: 'pipe', stderr: 'pipe' },
+      graceMs: 5000,
+      env,
+    })
+  } catch (error) {
+    return { ok: false, model, stage: 'process', detail: boundedDetail(String(error?.message ?? error)) }
+  }
+
+  const pending = new Map()
+  let nextId = 0
+  let buffer = ''
+  let closed = false
+  const send = (message) => {
+    try {
+      child.stdin?.write(`${JSON.stringify(message)}\n`)
+    } catch {
+      /* reported by the timeout path */
+    }
+  }
+  const call = (method, params) =>
+    new Promise((resolve) => {
+      const id = ++nextId
+      pending.set(id, resolve)
+      send({ jsonrpc: '2.0', id, method, params })
+    })
+
+  child.stdout?.on('data', (chunk) => {
+    buffer += chunk.toString('utf8')
+    let index
+    while ((index = buffer.indexOf('\n')) >= 0) {
+      const line = buffer.slice(0, index).trim()
+      buffer = buffer.slice(index + 1)
+      if (line === '') continue
+      let message
+      try {
+        message = JSON.parse(line)
+      } catch {
+        continue
+      }
+      if (message.method) {
+        if (message.method === 'session/request_permission') {
+          send({ jsonrpc: '2.0', id: message.id, result: { outcome: { outcome: 'cancelled' } } })
+        } else {
+          send({ jsonrpc: '2.0', id: message.id, error: { code: -32601, message: 'probe: unsupported' } })
+        }
+        continue
+      }
+      const settleWaiter = pending.get(message.id)
+      if (settleWaiter !== undefined) {
+        pending.delete(message.id)
+        settleWaiter(message)
+      }
+    }
+  })
+
+  const cleanup = () => {
+    if (closed) return
+    closed = true
+    try {
+      child.stdin?.end()
+    } catch {
+      /* already closed */
+    }
+    setTimeout(() => {
+      try {
+        child.terminate()
+      } catch {
+        /* already gone */
+      }
+    }, 1500).unref?.()
+  }
+
+  const deadline = new AbortController()
+  const timer = setTimeout(() => deadline.abort(), 75000)
+  const timedOut = new Promise((resolve) => {
+    deadline.signal.addEventListener('abort', () => resolve({ probeTimeout: true }), { once: true })
+  })
+
+  try {
+    const init = await Promise.race([call('initialize', { protocolVersion: 1, clientCapabilities: {} }), timedOut])
+    if (init.probeTimeout === true) return { ok: false, model, stage: 'initialize', detail: 'probe timed out' }
+    if (init.error) {
+      return { ok: false, model, stage: 'initialize', detail: boundedDetail(init.error.message) }
+    }
+    const session = await Promise.race([call('session/new', { cwd: homeDirectory(), mcpServers: [] }), timedOut])
+    if (session.probeTimeout === true) return { ok: false, model, stage: 'new-session', detail: 'probe timed out' }
+    if (session.error) {
+      return { ok: false, model, stage: 'new-session', detail: boundedDetail(session.error.message) }
+    }
+    const answered = await Promise.race([
+      call('session/prompt', {
+        sessionId: session.result?.sessionId,
+        prompt: [{ type: 'text', text: 'Reply with exactly: PONG' }],
+      }),
+      timedOut,
+    ])
+    if (answered.probeTimeout === true) {
+      return { ok: false, model, stage: 'prompt', detail: 'probe timed out' }
+    }
+    if (answered.error) {
+      const name = answered.error.data?.errorName
+      return {
+        ok: false,
+        model,
+        stage: 'prompt',
+        errorName: typeof name === 'string' ? name : null,
+        detail: boundedDetail(answered.error.message),
+        ms: Date.now() - startedAt,
+      }
+    }
+    return {
+      ok: true,
+      model,
+      stage: 'prompt',
+      stopReason: answered.result?.stopReason ?? null,
+      ms: Date.now() - startedAt,
+    }
+  } finally {
+    clearTimeout(timer)
+    cleanup()
+  }
+}
+
 function registerRoutes(ctx, store, state) {
   const webServer = ctx.get('webServer')
   if (webServer === undefined) {
@@ -669,6 +818,16 @@ function registerRoutes(ctx, store, state) {
           const probe = await probeVersion(ctx, store.settings)
           state.health = { ...probe, at: Date.now() }
           return writeJson(res, 200, state.health)
+        }
+        if (route === `${ROUTE_PREFIX}/probe` && req.method === 'POST') {
+          const body = await readBody(req)
+          const model =
+            typeof body.model === 'string' && body.model.trim() !== ''
+              ? body.model.trim()
+              : store.settings.model
+          const result = await probeModel(ctx, store.settings, model)
+          state.probe = { ...result, at: Date.now() }
+          return writeJson(res, 200, state.probe)
         }
         if (route === `${ROUTE_PREFIX}/runs/clear` && req.method === 'POST') {
           store.clearRuns()
