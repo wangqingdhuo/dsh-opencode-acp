@@ -21,7 +21,14 @@ import os from 'node:os'
 import path from 'node:path'
 
 export const name = 'dsh-opencode-acp'
-export const inject = ['subagents', 'subprocess']
+/*
+ * `webServer` is a declared dependency, not merely a lookup. Routes used to be
+ * registered only when the service happened to exist at activation time, which
+ * is a race: on a boot where the web layer mounted later the settings page got
+ * 404 on every route while delegation itself kept working. Declaring it makes
+ * the Loader wait instead of silently skipping the routes.
+ */
+export const inject = ['subagents', 'subprocess', 'webServer']
 
 const ROUTE_PREFIX = '/.dsh-opencode-acp'
 const PROVIDER_NAME = 'opencode'
@@ -175,6 +182,13 @@ function failureDiagnostic(stage, category) {
   return `Subagent failure (provider: opencode; stage: ${stage}; category: ${category})`
 }
 
+/** One line, bounded: an ACP error message is safe to show, but never unbounded. */
+function boundedDetail(text) {
+  if (typeof text !== 'string') return ''
+  const flat = text.replace(/\s+/g, ' ').trim()
+  return flat.length > 180 ? `${flat.slice(0, 177)}…` : flat
+}
+
 function promptText(prompt) {
   const parts = []
   for (const block of Array.isArray(prompt) ? prompt : []) {
@@ -204,6 +218,8 @@ async function startAcpRun({ ctx, store, settings, cwd, prompt, signal }) {
     toolCalls: 0,
     promptPreview: prompt.slice(0, 160),
     diagnostic: null,
+    errorName: null,
+    detail: null,
   }
   store.startRun(record)
 
@@ -336,7 +352,15 @@ async function startAcpRun({ ctx, store, settings, cwd, prompt, signal }) {
     pending.delete(message.id)
     if (message.error) {
       const textPart = typeof message.error.message === 'string' ? message.error.message : 'ACP error'
-      waiter.reject(new Error(textPart))
+      const error = new Error(textPart)
+      error.acp = {
+        message: textPart,
+        errorName:
+          message.error.data && typeof message.error.data.errorName === 'string'
+            ? message.error.data.errorName
+            : undefined,
+      }
+      waiter.reject(error)
     } else {
       waiter.resolve(message.result)
     }
@@ -415,7 +439,14 @@ async function startAcpRun({ ctx, store, settings, cwd, prompt, signal }) {
     sessionId = id
     store.finishRun(runId, { sessionId })
   } catch (error) {
-    settle('error', failureDiagnostic('initialize', 'handshake'))
+    const acp = error && typeof error === 'object' ? error.acp : undefined
+    const detail = acp === undefined ? '' : boundedDetail(acp.message)
+    settle(
+      'error',
+      `Subagent failure (provider: opencode; stage: initialize; category: ${
+        acp?.errorName ?? 'handshake'
+      }${detail === '' ? '' : `; detail: ${detail}`})`,
+    )
     await dispose().catch(() => {})
     throw new Error(failureDiagnostic('initialize', 'handshake'), { cause: error })
   }
@@ -439,9 +470,28 @@ async function startAcpRun({ ctx, store, settings, cwd, prompt, signal }) {
     } catch (error) {
       stopReason = signal?.aborted ? 'aborted' : 'error'
       if (!signal?.aborted) {
-        const category = exitSeen === null ? 'transport' : 'process-exit'
-        const suffix = exitSeen && typeof exitSeen.exitCode === 'number' ? `; exit code: ${exitSeen.exitCode}` : ''
-        diagnostic = `Subagent failure (provider: opencode; stage: prompt; category: ${category}${suffix})`
+        const acp = error && typeof error === 'object' ? error.acp : undefined
+        const suffix =
+          exitSeen && typeof exitSeen.exitCode === 'number' ? `; exit code: ${exitSeen.exitCode}` : ''
+        if (acp !== undefined) {
+          /*
+           * The child answered with a JSON-RPC error, which is the normal shape
+           * for "your provider refused this": keep its own name and message, so
+           * an exhausted free tier reads as `free-limit`, not `transport`.
+           */
+          const category =
+            acp.errorName === 'provider.free-limit'
+              ? 'free-limit'
+              : acp.errorName === undefined
+                ? 'provider'
+                : acp.errorName
+          const detail = boundedDetail(acp.message)
+          diagnostic = `Subagent failure (provider: opencode; stage: prompt; category: ${category}${detail === '' ? '' : `; detail: ${detail}`})`
+          store.finishRun(runId, { errorName: acp.errorName ?? null, detail: detail || null })
+        } else {
+          const category = exitSeen === null ? 'transport' : 'process-exit'
+          diagnostic = `Subagent failure (provider: opencode; stage: prompt; category: ${category}${suffix})`
+        }
       }
       void error
     } finally {
@@ -589,7 +639,11 @@ async function probeVersion(ctx, settings) {
 
 function registerRoutes(ctx, store, state) {
   const webServer = ctx.get('webServer')
-  if (webServer === undefined) return () => {}
+  if (webServer === undefined) {
+    // Unreachable with `webServer` declared in `inject`; loud rather than silent.
+    console.warn('dsh-opencode-acp: no webServer service, settings routes unavailable')
+    return () => {}
+  }
 
   return webServer.register({
     kind: 'prefix',

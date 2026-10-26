@@ -531,6 +531,9 @@ window.__ModuleLoader__.load({
                                 h('div', { style: S.mono }, `session: ${run.sessionId ?? '—'}`),
                                 h('div', { style: S.mono }, `工具调用: ${run.toolCalls ?? 0}`),
                                 h('div', { style: S.mono }, `任务: ${run.promptPreview ?? ''}`),
+                                run.errorName
+                                  ? h('div', { style: { ...S.mono, color: T.err } }, `错误类型: ${run.errorName}`)
+                                  : null,
                                 run.diagnostic
                                   ? h('div', { style: { ...S.mono, color: T.err } }, run.diagnostic)
                                   : null,
