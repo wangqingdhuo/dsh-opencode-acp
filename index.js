@@ -662,7 +662,7 @@ async function probeModel(ctx, settings, model) {
   try {
     child = ctx.subprocess.spawn({
       argv: [settings.command, ...settings.args],
-      cwd: homeDirectory(),
+      cwd: process.cwd(),
       /*
        * stderr must be drained: opencode is chatty on it, and an unread pipe
        * fills at ~64 KiB and blocks the child mid-handshake, which looks exactly
