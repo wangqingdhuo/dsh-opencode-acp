@@ -663,7 +663,12 @@ async function probeModel(ctx, settings, model) {
     child = ctx.subprocess.spawn({
       argv: [settings.command, ...settings.args],
       cwd: homeDirectory(),
-      stdio: { stdin: 'pipe', stdout: 'pipe', stderr: 'pipe' },
+      /*
+       * stderr must be drained: opencode is chatty on it, and an unread pipe
+       * fills at ~64 KiB and blocks the child mid-handshake, which looks exactly
+       * like a dead model.
+       */
+      stdio: { stdin: 'pipe', stdout: 'pipe', stderr: { maxBytes: 65536 } },
       graceMs: 5000,
       env,
     })
