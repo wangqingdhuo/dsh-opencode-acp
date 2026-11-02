@@ -12,7 +12,7 @@ and only the final answer comes back. A settings page lets you switch models, ch
 policy and working directory, and watch every run — including the opencode session id, duration and
 token usage.
 
-[中文说明](README.zh.md) · **[官网](http://185.242.234.241/)** (Chinese by default, `EN` switch top right)
+[中文说明](README.zh.md) · **[官网](https://wangqingdhuo.github.io/dsh-opencode-acp/)** · [self-hosted copy](http://185.242.234.241/) (both Chinese by default, `EN` switch top right)
 
 ## Quick start
 
@@ -156,7 +156,7 @@ table). Both are named exports; `cordis.patch.yml` inserts the two rows.
 ## Landing page
 
 `docs/` is the standalone marketing page (no build step, no CDN, Chinese by default with an `EN`
-switch). It is deployed at **http://185.242.234.241/** and served by nginx from
+switch). It is published at **https://wangqingdhuo.github.io/dsh-opencode-acp/** (GitHub Pages, `main` + `/docs`) and mirrored at **http://185.242.234.241/** served by nginx from
 `/var/www/dsh-opencode-acp`; to host it yourself, upload the folder to any static host or run
 `python -m http.server --directory docs 8080`. `?lang=en` links straight to English.
 
