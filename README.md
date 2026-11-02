@@ -153,6 +153,12 @@ The Host half is `index.js` (ACP client, provider, storage, HTTP routes under `/
 the browser half is `client.js` (a `settings.section` page registered through the client module
 table). Both are named exports; `cordis.patch.yml` inserts the two rows.
 
+## Landing page
+
+`site/` is the standalone marketing page (no build step, no CDN). Upload the folder to any static
+host, or serve it from a checkout with `python -m http.server --directory site 8080`. GitHub Pages
+can point at `main` + `/site` directly.
+
 ## Licence
 
 MIT

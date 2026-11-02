@@ -11,25 +11,28 @@
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/mark.svg" type="image/svg+xml">
 <link rel="stylesheet" href="site.css">
+<script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 
 <header class="nav">
-  <a class="nav__mark" href="#top" aria-label="dsh-opencode-acp, top of page">
-    <svg class="mark" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
-      <path d="M3 12h7.5" stroke="#8CA0B2" stroke-width="1.4"/>
-      <path d="M13.5 12H21" stroke="#F0A03A" stroke-width="1.4"/>
-      <circle cx="12" cy="12" r="1.6" fill="#E9E4D9"/>
-      <path d="M12 3v5.2M12 15.8V21" stroke="rgba(140,160,178,.55)" stroke-width="1"/>
-    </svg>
-    <span>dsh-opencode-acp</span>
-  </a>
-  <nav class="nav__links" aria-label="Project links">
-    <a href="https://www.npmjs.com/package/dsh-opencode-acp" rel="noopener">npm</a>
-    <a href="https://github.com/wangqingdhuo/dsh-opencode-acp" rel="noopener">GitHub</a>
-    <span class="nav__version">v0.3.2</span>
-  </nav>
+  <div class="nav__inner">
+    <a class="nav__mark" href="#top" aria-label="dsh-opencode-acp, top of page">
+      <svg class="mark" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+        <path d="M3 12h7.5" stroke="#8CA0B2" stroke-width="1.4"/>
+        <path d="M13.5 12H21" stroke="#F0A03A" stroke-width="1.4"/>
+        <circle cx="12" cy="12" r="1.6" fill="#E9E4D9"/>
+        <path d="M12 3v5.2M12 15.8V21" stroke="rgba(140,160,178,.55)" stroke-width="1"/>
+      </svg>
+      <span>dsh-opencode-acp</span>
+    </a>
+    <nav class="nav__links" aria-label="Project links">
+      <a href="https://www.npmjs.com/package/dsh-opencode-acp" rel="noopener">npm</a>
+      <a href="https://github.com/wangqingdhuo/dsh-opencode-acp" rel="noopener">GitHub</a>
+      <span class="nav__version">v0.3.1</span>
+    </nav>
+  </div>
 </header>
 
 <main id="main">
@@ -59,12 +62,11 @@
     <figure class="wire" id="wire">
       <figcaption class="wire__head">
         <span>DSH</span>
-        <span class="wire__boundary">process boundary</span>
         <span>opencode acp</span>
       </figcaption>
 
       <div class="wire__stage">
-        <canvas id="wire-canvas" height="120" aria-hidden="true"></canvas>
+        <canvas id="wire-canvas" height="92" aria-hidden="true"></canvas>
         <p class="wire__legend" aria-hidden="true">
           <span class="wire__legend-tag">out</span>
           <span>initialize</span>
@@ -74,7 +76,7 @@
           <span>agent_message_chunk ×5</span>
           <span>usage_update</span>
         </p>
-        <ol class="wire__static" aria-label="One shortened run">
+        <ol class="wire__static" aria-label="One shortened run: requests out, answer back">
           <li><b>out</b> initialize</li>
           <li><b>out</b> session/new</li>
           <li><b>out</b> session/prompt</li>
@@ -86,10 +88,10 @@
       <p class="wire__caption">One run, shortened. Method names are the ones the README documents.</p>
     </figure>
 
-    <div class="record-bar" aria-label="Example run record">
+    <div class="record-bar" role="group" aria-label="Example run record">
       <span><i>run</i> 0f3a9c</span>
       <span><i>model</i> big-pickle</span>
-      <span><i>cost</i> 42.1s</span>
+      <span><i>duration</i> 42.1s</span>
       <span><i>tokens</i> 3,204</span>
       <span class="record-bar__state">done</span>
     </div>
@@ -118,7 +120,7 @@
       <h2 id="records-title">Every run leaves a record.</h2>
       <p>
         The plugin speaks ACP itself, so it keeps the session id, model, duration, tool calls and
-        tokens that the official provider drops. The last row is a real failure, kept because it is
+        tokens that the official provider drops. The last row is the failure worth keeping: it is
         the one that tells you what to fix.
       </p>
       <p class="note">Example record. Fields match <code>runs.json</code>.</p>
@@ -140,13 +142,13 @@
         </thead>
         <tbody>
           <tr class="records__row" data-row="1">
-            <th scope="row">11:42:07</th>
-            <td>opencode/deepseek-v4.1-flash-free</td>
-            <td>repo/web</td>
-            <td class="num">6,317</td>
-            <td class="num">↑13,543 ↓81</td>
-            <td><span class="dot dot--ok" aria-hidden="true"></span>completed</td>
-            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-1" aria-label="Show run detail">+</button></td>
+            <th scope="row" data-label="started">11:42:07</th>
+            <td data-label="model">opencode/deepseek-v4.1-flash-free</td>
+            <td data-label="dir">repo/web</td>
+            <td class="num" data-label="ms">6,317</td>
+            <td class="num" data-label="tokens">↑13,543 ↓81</td>
+            <td data-label="state"><span class="dot dot--ok" aria-hidden="true"></span>completed</td>
+            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-1" aria-label="Show detail for the run started at 11:42:07">+</button></td>
           </tr>
           <tr class="records__detail" id="detail-1" hidden>
             <td colspan="7">
@@ -156,13 +158,13 @@
             </td>
           </tr>
           <tr class="records__row" data-row="2">
-            <th scope="row">11:36:22</th>
-            <td>opencode-go/deepseek-v4.1-flash</td>
-            <td>repo/api</td>
-            <td class="num">4,102</td>
-            <td class="num">↑8,914 ↓204</td>
-            <td><span class="dot dot--ok" aria-hidden="true"></span>completed</td>
-            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-2" aria-label="Show run detail">+</button></td>
+            <th scope="row" data-label="started">11:36:22</th>
+            <td data-label="model">opencode-go/deepseek-v4.1-flash</td>
+            <td data-label="dir">repo/api</td>
+            <td class="num" data-label="ms">4,102</td>
+            <td class="num" data-label="tokens">↑8,914 ↓204</td>
+            <td data-label="state"><span class="dot dot--ok" aria-hidden="true"></span>completed</td>
+            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-2" aria-label="Show detail for the run started at 11:36:22">+</button></td>
           </tr>
           <tr class="records__detail" id="detail-2" hidden>
             <td colspan="7">
@@ -172,13 +174,13 @@
             </td>
           </tr>
           <tr class="records__row" data-row="3">
-            <th scope="row">10:58:03</th>
-            <td>opencode/glm-5.3-flash-free</td>
-            <td>repo/docs</td>
-            <td class="num">31,884</td>
-            <td class="num">↑21,077 ↓1,340</td>
-            <td><span class="dot dot--ok" aria-hidden="true"></span>completed</td>
-            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-3" aria-label="Show run detail">+</button></td>
+            <th scope="row" data-label="started">10:58:03</th>
+            <td data-label="model">opencode/glm-5.3-flash-free</td>
+            <td data-label="dir">repo/docs</td>
+            <td class="num" data-label="ms">31,884</td>
+            <td class="num" data-label="tokens">↑21,077 ↓1,340</td>
+            <td data-label="state"><span class="dot dot--ok" aria-hidden="true"></span>completed</td>
+            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-3" aria-label="Show detail for the run started at 10:58:03">+</button></td>
           </tr>
           <tr class="records__detail" id="detail-3" hidden>
             <td colspan="7">
@@ -188,13 +190,13 @@
             </td>
           </tr>
           <tr class="records__row records__row--fault" data-row="4">
-            <th scope="row">10:03:11</th>
-            <td>opencode/deepseek-v4.1-flash-free</td>
-            <td>repo/web</td>
-            <td class="num">3,967</td>
-            <td class="num">—</td>
-            <td><span class="dot dot--fault" aria-hidden="true"></span>free-limit</td>
-            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-4" aria-label="Show run detail">+</button></td>
+            <th scope="row" data-label="started">10:03:11</th>
+            <td data-label="model">opencode/deepseek-v4.1-flash-free</td>
+            <td data-label="dir">repo/web</td>
+            <td class="num" data-label="ms">3,967</td>
+            <td class="num" data-label="tokens">—</td>
+            <td data-label="state"><span class="dot dot--fault" aria-hidden="true"></span>free-limit</td>
+            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-4" aria-label="Show detail for the run started at 10:03:11">+</button></td>
           </tr>
           <tr class="records__detail" id="detail-4" hidden>
             <td colspan="7">
@@ -295,12 +297,19 @@
       as you and is not sandboxed · the local settings routes are unauthenticated by design, bound to
       loopback.
     </p>
+
+    <noscript>
+      <p class="limits">JavaScript is off, so the copy buttons do nothing here. Run
+        <code>dsh plugin --profile default add dsh-opencode-acp</code> in a terminal.</p>
+    </noscript>
   </section>
 </main>
 
 <footer class="foot">
-  <span>MIT · <a href="https://github.com/wangqingdhuo/dsh-opencode-acp" rel="noopener">wangqingdhuo/dsh-opencode-acp</a></span>
-  <span class="foot__note">Record values are example data from a real machine.</span>
+  <div class="foot__inner">
+    <span>MIT · <a href="https://github.com/wangqingdhuo/dsh-opencode-acp" rel="noopener">wangqingdhuo/dsh-opencode-acp</a></span>
+    <span class="foot__note">Record values are example data from a real machine.</span>
+  </div>
 </footer>
 
 <div class="status" id="status" role="status" aria-live="polite"></div>
