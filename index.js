@@ -19,6 +19,7 @@ import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { StringDecoder } from 'node:string_decoder'
 
 export const name = 'dsh-opencode-acp'
 /*
@@ -79,20 +80,39 @@ function homeDirectory() {
   return process.env.DSH_HOME || path.join(os.homedir(), '.dsh')
 }
 
-function readJsonFile(file, fallback) {
+function readJsonFile(file, fallback, label = file) {
   try {
     return JSON.parse(fs.readFileSync(file, 'utf8'))
-  } catch {
+  } catch (error) {
+    /* A missing file is the normal first-run case; anything else means stored
+     * state is unreadable and the caller is silently about to run on defaults. */
+    if (error?.code !== 'ENOENT') {
+      console.warn(`dsh-opencode-acp: ${label} could not be read (${error?.message ?? error}); using defaults`)
+    }
     return fallback
   }
 }
 
+/**
+ * Persist through a sibling temp file and rename, so a crash or a concurrent
+ * reader never observes a truncated JSON document.
+ * @returns whether the file was written.
+ */
 function writeJsonFile(file, value) {
+  const temp = `${file}.${process.pid}.${Date.now()}.tmp`
   try {
     fs.mkdirSync(path.dirname(file), { recursive: true })
-    fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`, 'utf8')
+    fs.writeFileSync(temp, `${JSON.stringify(value, null, 2)}\n`, 'utf8')
+    fs.renameSync(temp, file)
+    return true
   } catch {
-    /* a read-only home must not break delegation */
+    /* a read-only home must not break delegation; the settings route reports it */
+    try {
+      fs.unlinkSync(temp)
+    } catch {
+      /* nothing to clean up */
+    }
+    return false
   }
 }
 
@@ -119,22 +139,61 @@ function normalizeSettings(raw) {
   return next
 }
 
+/** Environment for every opencode child: the Host environment plus settings overrides. */
+function opencodeEnv(settings) {
+  return { ...process.env, ...settings.env }
+}
+
+/**
+ * `OPENCODE_CONFIG_CONTENT` for one child: Harness-owned keys shallow-merged
+ * with any JSON object the user supplied through settings.env, so a user's own
+ * extra config survives instead of being clobbered.
+ * @param settings - live settings whose env may carry a user document.
+ * @param managed - keys this plugin owns (autoupdate, model, small_model).
+ * @returns the JSON string to export.
+ */
+function opencodeConfig(settings, managed) {
+  const user = settings.env?.OPENCODE_CONFIG_CONTENT
+  if (typeof user === 'string' && user.trim() !== '') {
+    try {
+      const parsed = JSON.parse(user)
+      if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return JSON.stringify({ ...managed, ...parsed })
+      }
+    } catch {
+      /* invalid user JSON: keep the managed document, the child reports its own error */
+    }
+  }
+  return JSON.stringify(managed)
+}
+
 function createStore() {
   const dir = path.join(homeDirectory(), 'opencode-acp')
   const settingsFile = path.join(dir, 'settings.json')
   const runsFile = path.join(dir, 'runs.json')
-  const settings = normalizeSettings(readJsonFile(settingsFile, {}))
-  const loaded = readJsonFile(runsFile, [])
-  const runs = Array.isArray(loaded) ? loaded.filter((r) => r && typeof r === 'object') : []
+  const settings = normalizeSettings(readJsonFile(settingsFile, {}, settingsFile))
+  const loaded = readJsonFile(runsFile, [], runsFile)
+  const stored = Array.isArray(loaded) ? loaded.filter((r) => r && typeof r === 'object') : []
+  /* A run that was still running when the Host exited can never finish; record
+   * the restart explicitly instead of leaving a permanent "running" row. */
+  let reconciled = false
+  const runs = stored.map((run) => {
+    if (run.status !== 'running') return run
+    reconciled = true
+    return { ...run, status: 'error', stopReason: 'error', diagnostic: 'host restart' }
+  })
+  if (reconciled) writeJsonFile(runsFile, runs)
 
   return {
     dir,
     settings,
     runs,
     saveSettings(patch) {
-      this.settings = normalizeSettings({ ...this.settings, ...patch })
-      writeJsonFile(settingsFile, this.settings)
-      return this.settings
+      const next = normalizeSettings({ ...this.settings, ...patch })
+      /* A settings route must not answer 200 for a change it could not store. */
+      if (!writeJsonFile(settingsFile, next)) throw new Error('settings could not be persisted')
+      this.settings = next
+      return next
     },
     startRun(run) {
       this.runs = [run, ...this.runs].slice(0, MAX_RUNS)
@@ -197,6 +256,23 @@ function boundedDetail(text) {
   return flat.length > 180 ? `${flat.slice(0, 177)}…` : flat
 }
 
+/**
+ * Last-resort failure detail from a collected child stderr: one bounded line.
+ * @param child - the subprocess handle whose stderr was collected.
+ * @param limit - maximum characters kept from the tail.
+ * @returns flattened tail, or '' when nothing was collected.
+ */
+function stderrTail(child, limit = 300) {
+  try {
+    const text = child?.collected?.stderr?.readFrom(0).text ?? ''
+    const flat = text.replace(/\s+/g, ' ').trim()
+    if (flat === '') return ''
+    return flat.length > limit ? flat.slice(-limit) : flat
+  } catch {
+    return ''
+  }
+}
+
 function promptText(prompt) {
   const parts = []
   for (const block of Array.isArray(prompt) ? prompt : []) {
@@ -228,57 +304,92 @@ async function startAcpRun({ ctx, store, settings, cwd, prompt, signal }) {
     diagnostic: null,
     errorName: null,
     detail: null,
+    note: null,
   }
   store.startRun(record)
 
-  const env = { ...process.env, ...settings.env }
+  const env = opencodeEnv(settings)
   const inline = { autoupdate: false }
   if (settings.model !== '') inline.model = settings.model
   if (settings.smallModel !== '') inline.small_model = settings.smallModel
-  env.OPENCODE_CONFIG_CONTENT = JSON.stringify(inline)
+  env.OPENCODE_CONFIG_CONTENT = opencodeConfig(settings, inline)
 
   let child
   try {
     child = ctx.subprocess.spawn({
       argv: [settings.command, ...settings.args],
       cwd,
-      stdio: { stdin: 'pipe', stdout: 'pipe', stderr: 'inherit' },
+      /*
+       * stderr is collected, not inherited: an ACP-level failure usually only
+       * explains itself there, and the diagnostic needs it. Collection also
+       * keeps an unread pipe from blocking a chatty child.
+       */
+      stdio: { stdin: 'pipe', stdout: 'pipe', stderr: { maxBytes: 65536 } },
       graceMs: settings.graceMs,
       env,
     })
   } catch (error) {
+    const detail = boundedDetail(String(error?.message ?? error))
+    const diagnostic = `${failureDiagnostic('process', 'process-start')}${
+      detail === '' ? '' : `; detail: ${detail}`
+    }`
     store.finishRun(runId, {
       status: 'error',
       stopReason: 'error',
       ms: Date.now() - startedAt,
-      diagnostic: failureDiagnostic('process', 'process-start'),
+      diagnostic,
     })
-    throw new Error(failureDiagnostic('process', 'process-start'), { cause: error })
+    throw new Error(diagnostic, { cause: error })
   }
+
+  /*
+   * A pipe can fail asynchronously (a write after the child died raises EPIPE).
+   * Without a listener that becomes an uncaught exception in the Host process.
+   */
+  child.stdin?.on('error', () => {})
+  child.stdout?.on('error', () => {})
 
   const text = []
   let tokens = null
   let sessionId = null
   let toolCalls = 0
   let exitSeen = null
+  let policyRefusal = null
+  const decoder = new StringDecoder('utf8')
   const pending = new Map()
   let nextId = 1
   let buffer = ''
   let disposed = false
   let disposedPromise
 
+  /**
+   * A child that exits while a request is in flight can never answer it. Without
+   * this, the `session/prompt` promise stays pending forever and the delegation
+   * hangs until the caller's tool timeout instead of failing with a diagnostic.
+   */
+  const rejectPending = (message) => {
+    for (const [id, waiter] of pending) {
+      pending.delete(id)
+      waiter.reject(new Error(message))
+    }
+  }
+
   child.done.then(
     (outcome) => {
       exitSeen = outcome
+      rejectPending('ACP child exited before answering')
     },
     () => {
       exitSeen = { exitCode: null, signal: null }
+      rejectPending('ACP child exited before answering')
     },
   )
 
   const send = (message) => {
+    const stdin = child.stdin
+    if (stdin === undefined || stdin.destroyed === true || stdin.writable !== true) return
     try {
-      child.stdin?.write(`${JSON.stringify(message)}\n`)
+      stdin.write(`${JSON.stringify(message)}\n`)
     } catch {
       /* the exit path reports the failure */
     }
@@ -338,7 +449,9 @@ async function startAcpRun({ ctx, store, settings, cwd, prompt, signal }) {
         }
         reply(message.id, { outcome: { outcome: 'cancelled' } })
         if (settings.permission !== 'allow' || !options.length) {
-          store.finishRun(runId, { diagnostic: `permission denied (kind: ${kind})` })
+          /* Kept in its own field: settle() must not overwrite it later. */
+          policyRefusal = `permission denied (kind: ${kind})`
+          store.finishRun(runId, { note: policyRefusal })
         }
         return
       }
@@ -375,14 +488,20 @@ async function startAcpRun({ ctx, store, settings, cwd, prompt, signal }) {
   }
 
   child.stdout?.on('data', (chunk) => {
-    buffer += chunk.toString('utf8')
+    buffer += typeof chunk === 'string' ? chunk : decoder.write(chunk)
     let index
     while ((index = buffer.indexOf('\n')) >= 0) {
       const line = buffer.slice(0, index).trim()
       buffer = buffer.slice(index + 1)
       if (line !== '') handleLine(line)
     }
-    if (buffer.length > 8 * 1024 * 1024) buffer = ''
+    if (buffer.length > 8 * 1024 * 1024) {
+      // One NDJSON line this large is protocol abuse or corruption; keeping it
+      // would grow without bound, dropping it would parse a broken frame.
+      buffer = ''
+      store.finishRun(runId, { detail: 'protocol buffer overflow (line longer than 8 MiB)' })
+      rejectPending('ACP protocol line exceeded 8 MiB')
+    }
   })
 
   const dispose = () => {
@@ -420,20 +539,39 @@ async function startAcpRun({ ctx, store, settings, cwd, prompt, signal }) {
   }
 
   const onAbort = () => {
-    if (sessionId !== null) notify('session/cancel', { sessionId })
+    if (sessionId !== null) {
+      notify('session/cancel', { sessionId })
+      return
+    }
+    /*
+     * The handshake has no session to cancel. Reject the in-flight request and
+     * tear the child down, or an aborted delegation keeps waiting for a reply
+     * that may never come.
+     */
+    for (const waiter of pending.values()) waiter.reject(new Error('ACP run aborted during the handshake'))
+    pending.clear()
+    void dispose().catch(() => {})
   }
   signal?.addEventListener('abort', onAbort, { once: true })
 
   const settle = (stopReason, diagnostic) => {
     const ms = Date.now() - startedAt
+    /* A policy refusal is not a user cancellation: give it its own status. */
+    const status =
+      policyRefusal !== null && stopReason === 'aborted'
+        ? 'refusal'
+        : stopReason === 'completed'
+          ? 'completed'
+          : stopReason
     store.finishRun(runId, {
-      status: stopReason === 'completed' ? 'completed' : stopReason,
+      status,
       stopReason,
       ms,
       sessionId,
       tokens,
       toolCalls,
-      diagnostic: diagnostic ?? null,
+      diagnostic: diagnostic ?? (policyRefusal !== null && stopReason !== 'completed' ? policyRefusal : null),
+      note: policyRefusal,
     })
     signal?.removeEventListener('abort', onAbort)
   }
@@ -447,16 +585,24 @@ async function startAcpRun({ ctx, store, settings, cwd, prompt, signal }) {
     sessionId = id
     store.finishRun(runId, { sessionId })
   } catch (error) {
+    if (signal?.aborted) {
+      settle('aborted', null)
+      await dispose().catch(() => {})
+      throw new Error(failureDiagnostic('initialize', 'aborted'), { cause: error })
+    }
     const acp = error && typeof error === 'object' ? error.acp : undefined
-    const detail = acp === undefined ? '' : boundedDetail(acp.message)
-    settle(
-      'error',
-      `Subagent failure (provider: opencode; stage: initialize; category: ${
-        acp?.errorName ?? 'handshake'
-      }${detail === '' ? '' : `; detail: ${detail}`})`,
-    )
+    const parts = [acp === undefined ? boundedDetail(String(error?.message ?? '')) : boundedDetail(acp.message)]
+    if (exitSeen !== null && typeof exitSeen.exitCode === 'number') parts.push(`exit code ${exitSeen.exitCode}`)
+    const tail = stderrTail(child)
+    if (tail !== '') parts.push(`stderr: ${tail}`)
+    const detail = parts.filter((part) => part !== '').join('; ')
+    const diagnostic = `Subagent failure (provider: opencode; stage: initialize; category: ${
+      acp?.errorName ?? (exitSeen === null ? 'handshake' : 'process-exit')
+    }${detail === '' ? '' : `; detail: ${detail}`})`
+    settle('error', diagnostic)
     await dispose().catch(() => {})
-    throw new Error(failureDiagnostic('initialize', 'handshake'), { cause: error })
+    /* The model must see the reason (unknown model, auth required, ENOENT). */
+    throw new Error(diagnostic, { cause: error })
   }
 
   const result = (async () => {
@@ -494,11 +640,17 @@ async function startAcpRun({ ctx, store, settings, cwd, prompt, signal }) {
                 ? 'provider'
                 : acp.errorName
           const detail = boundedDetail(acp.message)
-          diagnostic = `Subagent failure (provider: opencode; stage: prompt; category: ${category}${detail === '' ? '' : `; detail: ${detail}`})`
+          const tail = stderrTail(child)
+          diagnostic = `Subagent failure (provider: opencode; stage: prompt; category: ${category}${
+            detail === '' ? '' : `; detail: ${detail}`
+          }${tail === '' ? '' : `; stderr: ${tail}`})`
           store.finishRun(runId, { errorName: acp.errorName ?? null, detail: detail || null })
         } else {
           const category = exitSeen === null ? 'transport' : 'process-exit'
-          diagnostic = `Subagent failure (provider: opencode; stage: prompt; category: ${category}${suffix})`
+          const tail = stderrTail(child)
+          diagnostic = `Subagent failure (provider: opencode; stage: prompt; category: ${category}${suffix}${
+            tail === '' ? '' : `; stderr: ${tail}`
+          })`
         }
       }
       void error
@@ -613,36 +765,69 @@ async function readBody(req) {
  * returns the version string, without starting a server.
  */
 async function probeVersion(ctx, settings) {
-  const child = ctx.subprocess.spawn({
-    argv: [settings.command, '--version'],
-    cwd: homeDirectory(),
-    stdio: { stdin: 'ignore', stdout: { maxBytes: 65536 }, stderr: { maxBytes: 65536 } },
-    graceMs: 8000,
-    env: { ...process.env },
-  })
-  const timeout = AbortSignal.timeout(15000)
+  let child
   try {
-    await child.done
+    child = ctx.subprocess.spawn({
+      argv: [settings.command, '--version'],
+      cwd: homeDirectory(),
+      stdio: { stdin: 'ignore', stdout: { maxBytes: 65536 }, stderr: { maxBytes: 65536 } },
+      graceMs: 8000,
+      env: opencodeEnv(settings),
+    })
+  } catch (error) {
+    return { ok: false, version: '', detail: boundedDetail(String(error?.message ?? error)) }
+  }
+  child.stdin?.on('error', () => {})
+  child.stdout?.on('error', () => {})
+
+  /* waitForExit is the timeout: awaiting child.done first would be unbounded. */
+  let exited = false
+  try {
+    exited = await child.waitForExit(AbortSignal.timeout(15000))
   } catch {
-    /* outcome below carries the facts */
+    exited = false
   }
   let outcome = null
-  try {
-    outcome = await child.waitForExit(timeout)
-  } catch {
-    outcome = null
-  }
-  if (outcome === false) {
+  if (exited) {
+    outcome = await child.done.then(
+      (value) => value,
+      () => null,
+    )
+  } else {
     try {
       child.terminate()
     } catch {
       /* already gone */
     }
+    try {
+      await child.waitForExit(AbortSignal.timeout(5000))
+    } catch {
+      /* bounded anyway */
+    }
   }
+
   const stdout = child.collected?.stdout?.readFrom(0).text ?? ''
   const stderr = child.collected?.stderr?.readFrom(0).text ?? ''
   const version = (stdout || stderr).trim().split(/\r?\n/).filter(Boolean)[0] ?? ''
-  return { ok: version !== '', version }
+  /* A resolved executable is not a working one: a non-zero exit is a failure. */
+  const ok = exited && outcome !== null && outcome.exitCode === 0 && version !== ''
+  if (ok) return { ok: true, version }
+  const stderrDetail = stderr.trim() === '' ? '' : `; stderr: ${boundedDetail(stderr)}`
+  const failure = [
+    outcome === null
+      ? exited
+        ? 'the command could not be started'
+        : 'command did not exit within 15s'
+      : outcome.exitCode === null
+        ? `killed by ${String(outcome.signal ?? 'a signal')}`
+        : outcome.exitCode !== 0
+          ? `exit code ${String(outcome.exitCode)}`
+          : 'no version output',
+    stderrDetail,
+  ]
+    .filter((part) => part !== '')
+    .join('')
+  return { ok: false, version, detail: boundedDetail(failure) }
 }
 
 /**
@@ -653,16 +838,17 @@ async function probeVersion(ctx, settings) {
  */
 async function probeModel(ctx, settings, model) {
   const startedAt = Date.now()
-  const env = { ...process.env, ...settings.env }
+  const env = opencodeEnv(settings)
   const inline = { autoupdate: false }
   if (model !== '') inline.model = model
-  env.OPENCODE_CONFIG_CONTENT = JSON.stringify(inline)
+  env.OPENCODE_CONFIG_CONTENT = opencodeConfig(settings, inline)
 
   let child
   try {
     child = ctx.subprocess.spawn({
       argv: [settings.command, ...settings.args],
-      cwd: process.cwd(),
+      /* Same resolution as a real run: a pinned directory only when the mode says so. */
+      cwd: settings.cwdMode === 'fixed' && settings.cwdFixed !== '' ? settings.cwdFixed : process.cwd(),
       /*
        * stderr must be drained: opencode is chatty on it, and an unread pipe
        * fills at ~64 KiB and blocks the child mid-handshake, which looks exactly
@@ -675,27 +861,48 @@ async function probeModel(ctx, settings, model) {
   } catch (error) {
     return { ok: false, model, stage: 'process', detail: boundedDetail(String(error?.message ?? error)) }
   }
+  child.stdin?.on('error', () => {})
+  child.stdout?.on('error', () => {})
 
   const pending = new Map()
   let nextId = 0
   let buffer = ''
   let closed = false
+  const decoder = new StringDecoder('utf8')
+  /* A child that cannot start (or dies) never answers: race every call with it. */
+  const childDone = child.done.then(
+    (outcome) => ({ childOutcome: outcome }),
+    (error) => ({ childError: error }),
+  )
+  const childFailure = (result) => {
+    const error = result.childError
+    const detail =
+      error !== undefined
+        ? boundedDetail(String(error?.message ?? error))
+        : `the child exited (code ${String(result.childOutcome?.exitCode ?? 'null')}) before answering`
+    return { ok: false, model, stage: 'process', detail }
+  }
   const send = (message) => {
+    const stdin = child.stdin
+    if (stdin === undefined || stdin.destroyed === true || stdin.writable !== true) return
     try {
-      child.stdin?.write(`${JSON.stringify(message)}\n`)
+      stdin.write(`${JSON.stringify(message)}\n`)
     } catch {
-      /* reported by the timeout path */
+      /* reported by the child-exit path */
     }
   }
   const call = (method, params) =>
-    new Promise((resolve) => {
-      const id = ++nextId
-      pending.set(id, resolve)
-      send({ jsonrpc: '2.0', id, method, params })
-    })
+    Promise.race([
+      new Promise((resolve) => {
+        const id = ++nextId
+        pending.set(id, resolve)
+        send({ jsonrpc: '2.0', id, method, params })
+      }),
+      childDone,
+    ])
 
   child.stdout?.on('data', (chunk) => {
-    buffer += chunk.toString('utf8')
+    buffer += typeof chunk === 'string' ? chunk : decoder.write(chunk)
     let index
     while ((index = buffer.indexOf('\n')) >= 0) {
       const line = buffer.slice(0, index).trim()
@@ -707,7 +914,8 @@ async function probeModel(ctx, settings, model) {
       } catch {
         continue
       }
-      if (message.method) {
+      /* Only a message carrying an id is a request; notifications get no reply. */
+      if (typeof message.method === 'string' && message.id !== undefined) {
         if (message.method === 'session/request_permission') {
           send({ jsonrpc: '2.0', id: message.id, result: { outcome: { outcome: 'cancelled' } } })
         } else {
@@ -748,11 +956,13 @@ async function probeModel(ctx, settings, model) {
 
   try {
     const init = await Promise.race([call('initialize', { protocolVersion: 1, clientCapabilities: {} }), timedOut])
+    if (init.childOutcome !== undefined || init.childError !== undefined) return childFailure(init)
     if (init.probeTimeout === true) return { ok: false, model, stage: 'initialize', detail: 'probe timed out' }
     if (init.error) {
       return { ok: false, model, stage: 'initialize', detail: boundedDetail(init.error.message) }
     }
     const session = await Promise.race([call('session/new', { cwd: homeDirectory(), mcpServers: [] }), timedOut])
+    if (session.childOutcome !== undefined || session.childError !== undefined) return childFailure(session)
     if (session.probeTimeout === true) return { ok: false, model, stage: 'new-session', detail: 'probe timed out' }
     if (session.error) {
       return { ok: false, model, stage: 'new-session', detail: boundedDetail(session.error.message) }
@@ -764,6 +974,7 @@ async function probeModel(ctx, settings, model) {
       }),
       timedOut,
     ])
+    if (answered.childOutcome !== undefined || answered.childError !== undefined) return childFailure(answered)
     if (answered.probeTimeout === true) {
       return { ok: false, model, stage: 'prompt', detail: 'probe timed out' }
     }
@@ -799,6 +1010,62 @@ function registerRoutes(ctx, store, state) {
     return () => {}
   }
 
+  /**
+   * Browsers send Origin on cross-origin-capable requests. Only this listener's
+   * own origin may drive the settings routes, so another site cannot reconfigure
+   * the delegation command through a plain form/`text/plain` POST. Loopback
+   * spellings of the same authority are accepted: a page opened as `localhost`
+   * is still this server.
+   */
+  const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]', '::1'])
+  const originAllowed = (req) => {
+    const header = req.headers.origin
+    if (header === undefined) return true
+    if (header === 'null') return false
+    let own
+    try {
+      own = webServer.getOrigin()
+    } catch {
+      /* the listener has not bound yet: refuse rather than guess */
+      return false
+    }
+    if (header === own) return true
+    try {
+      const seen = new URL(header)
+      const self = new URL(own)
+      return (
+        seen.protocol === self.protocol &&
+        seen.port === self.port &&
+        LOOPBACK_HOSTS.has(seen.hostname) &&
+        LOOPBACK_HOSTS.has(self.hostname)
+      )
+    } catch {
+      return false
+    }
+  }
+
+  const isJsonRequest = (req) => {
+    const type = req.headers['content-type']
+    if (typeof type !== 'string') return false
+    return type.split(';', 1)[0].trim().toLowerCase() === 'application/json'
+  }
+
+  /**
+   * Apply the POST admission checks.
+   * @returns whether the handler may proceed; the failure response is written otherwise.
+   */
+  const admitPost = (req, res) => {
+    if (!originAllowed(req)) {
+      writeJson(res, 403, { error: 'cross-origin request rejected' })
+      return false
+    }
+    if (!isJsonRequest(req)) {
+      writeJson(res, 415, { error: 'content-type must be application/json' })
+      return false
+    }
+    return true
+  }
+
   return webServer.register({
     kind: 'prefix',
     path: ROUTE_PREFIX,
@@ -812,19 +1079,24 @@ function registerRoutes(ctx, store, state) {
             models: opencodeModels(),
             runs: store.runs,
             home: homeDirectory(),
+            health: state.health,
+            probe: state.probe,
           })
         }
         if (route === `${ROUTE_PREFIX}/settings` && req.method === 'POST') {
+          if (!admitPost(req, res)) return undefined
           const body = await readBody(req)
           const settings = store.saveSettings(body)
           return writeJson(res, 200, { settings })
         }
         if (route === `${ROUTE_PREFIX}/health` && req.method === 'POST') {
+          if (!admitPost(req, res)) return undefined
           const probe = await probeVersion(ctx, store.settings)
           state.health = { ...probe, at: Date.now() }
           return writeJson(res, 200, state.health)
         }
         if (route === `${ROUTE_PREFIX}/probe` && req.method === 'POST') {
+          if (!admitPost(req, res)) return undefined
           const body = await readBody(req)
           const model =
             typeof body.model === 'string' && body.model.trim() !== ''
@@ -835,6 +1107,7 @@ function registerRoutes(ctx, store, state) {
           return writeJson(res, 200, state.probe)
         }
         if (route === `${ROUTE_PREFIX}/runs/clear` && req.method === 'POST') {
+          if (!admitPost(req, res)) return undefined
           store.clearRuns()
           return writeJson(res, 200, { runs: [] })
         }
@@ -851,21 +1124,35 @@ function registerRoutes(ctx, store, state) {
 export function apply(ctx) {
   const store = createStore()
   const live = new Set()
-  const state = { health: null }
+  const state = { health: null, probe: null }
   const provider = new OpencodeProvider(ctx, store, live)
 
   ctx.effect(() => {
     const disposeProvider = ctx.subagents.registerProvider(provider)
-    const disposeRoutes = registerRoutes(ctx, store, state)
+    try {
+      /*
+       * Routes live in their own effect so their disposal is independent; the
+       * try/catch rolls the provider back if registration throws, instead of
+       * stranding a registered provider on a failed fiber.
+       */
+      ctx.effect(() => {
+        const disposeRoutes = registerRoutes(ctx, store, state)
+        return () => {
+          try {
+            disposeRoutes()
+          } catch {
+            /* already disposed */
+          }
+        }
+      }, 'opencode-acp.routes')
+    } catch (error) {
+      disposeProvider()
+      throw error
+    }
     return async () => {
-      try {
-        disposeRoutes()
-      } catch {
-        /* already disposed */
-      }
       disposeProvider()
       await Promise.all([...live].map((run) => run.dispose().catch(() => {})))
       live.clear()
     }
-  })
+  }, 'opencode-acp.provider')
 }

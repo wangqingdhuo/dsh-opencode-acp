@@ -33,7 +33,7 @@ opencode，由它用**自己的模型、工具和免费额度**干活，只把�
 dsh plugin --profile default add dsh-opencode-acp
 
 # 或者从 tarball
-dsh plugin --profile default add ./dsh-opencode-acp-0.1.1.tgz
+dsh plugin --profile default add ./dsh-opencode-acp-0.3.0.tgz
 ```
 
 装完重启或刷新 DSH，会出现两样东西：
@@ -59,6 +59,7 @@ dsh plugin --profile default add ./dsh-opencode-acp-0.1.1.tgz
 | 模型 | 主模型 | 下拉列出你 opencode 用过的模型，也允许手填 id |
 | 模型 | 小模型 | opencode 生成标题/小任务用的模型（留空让它自己挑） |
 | 模型 | 健康检查 | 跑一次 `opencode --version`，确认可执行文件找得到 |
+| 模型 | 测试当前模型 | 用**已保存的**模型起一个一次性会话，当场告诉你能不能跑（会真实消耗一次请求） |
 | 执行 | 权限应答 | `allow` 自动放行权限请求，`reject` 一律拒绝 |
 | 执行 | 工作目录 | 跟随调用方会话，或固定一个路径 |
 | 高级 | 命令 / 参数 | opencode 可执行文件 + `acp` 参数 |
@@ -86,6 +87,19 @@ DSH agent ── subagent_opencode ──► ctx.subagents ──► dsh-opencod
 - 子进程用你的用户账号运行，**不受 DSH 沙箱约束**，和 DSH 官方的
   `@deepseek-ai/dsh-subagent-acp` 行为一致。把它当成"opencode 能干你本人能干的事"。
 
+## 排错
+
+| 现象 | 原因与处理 |
+|---|---|
+| 委派失败，`category: free-limit` | opencode 免费额度按账号耗尽。点 **测试当前模型** 看现在哪个能用，或在 opencode 里接一个付费 provider。 |
+| 委派失败，`category: provider.internal` + "Model is unavailable" | 该模型的端点此刻不可用，换一个模型。 |
+| 设置页读不出来 / 空白 | Host 没能注册 `/.dsh-opencode-acp/*`。重启 DSH；仍不行就去插件页确认 bundle 是启用的。 |
+| 委派一直卡住不返回 | 0.3.0 已修：请求进行中若子进程死掉，现在会立即失败而不是挂起。 |
+| Windows 下别的插件报 `EPERM ... rename ... state.json` | 两个 DSH 实例在写同一份 profile 状态。从托盘退出后再启动一个。 |
+
+`/.dsh-opencode-acp/*` 这组路由**没有鉴权**，本机任何进程都能访问（只监听回环）。运行记录和设置以明文
+JSON 存在 `$DSH_HOME/opencode-acp/`，敏感程度等同于你的 shell 历史。
+
 ## 已知限制
 
 - 只回传 assistant 文本；opencode 的工具调用、思考、计划都留在它自己的会话里。
@@ -107,8 +121,8 @@ dsh plugin --profile default remove dsh-opencode-acp
 纯 JavaScript，没有构建步骤。
 
 ```sh
-node --check index.js
-node --check client.js
+npm run check   # 两半都做 node --check
+npm test        # 契约冒烟测试：用桩运行时加载两半并校验注册结果
 npm pack --dry-run
 ```
 

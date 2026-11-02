@@ -41,7 +41,7 @@ From the DSH Plugins page, or from a terminal:
 dsh plugin --profile default add dsh-opencode-acp
 
 # or from a tarball
-dsh plugin --profile default add ./dsh-opencode-acp-0.1.1.tgz
+dsh plugin --profile default add ./dsh-opencode-acp-0.3.0.tgz
 ```
 
 Then restart or refresh DSH. Two things appear:
@@ -67,6 +67,7 @@ The child gets only your task text and the working directory — never your conv
 | Model | main model | Picker built from the models your opencode has used, plus a free-form id |
 | Model | small model | opencode's model for titles and small jobs (blank = let opencode choose) |
 | Model | health check | Runs `opencode --version` and reports whether the executable resolves |
+| Model | test model | Starts one throwaway session against the **saved** model and answers whether it works right now (it spends one real request) |
 | Execution | permission | `allow` auto-answers permission requests, `reject` denies them |
 | Execution | working directory | Follow the calling session, or pin one path |
 | Advanced | command / args | The opencode executable plus the `acp` argument |
@@ -96,6 +97,20 @@ DSH agent ── subagent_opencode ──► ctx.subagents ──► dsh-opencod
   like DSH's own `@deepseek-ai/dsh-subagent-acp`. Treat delegation as "opencode may do what you
   could do".
 
+## Troubleshooting
+
+| Symptom | Cause and fix |
+|---|---|
+| Delegation fails with `category: free-limit` | opencode's free tier is exhausted for the account. Click **测试当前模型** to see which model works now, or connect a provider in opencode. |
+| Delegation fails with `category: provider.internal` + "Model is unavailable" | that model's endpoint is down right now; pick another one |
+| The settings page shows a read error or is blank | the Host could not register `/.dsh-opencode-acp/*`. Restart DSH; if it persists, check that the bundle is enabled in Plugins. |
+| `卡住` on a delegation that never returns | fixed in 0.3.0: a child that dies mid-request now fails the run instead of leaving it pending |
+| Windows: `EPERM ... rename ... state.json` from another plugin | two DSH instances writing the same profile state. Quit from the tray and start once. |
+
+The `/.dsh-opencode-acp/*` routes are **unauthenticated by design** and reachable from any process on
+this machine (localhost only). Run history and settings are stored as plain JSON under
+`$DSH_HOME/opencode-acp/`; treat that directory as sensitive as your shell history.
+
 ## Limits
 
 - Only assistant text is returned; opencode's tool traffic, reasoning and plans stay in its own
@@ -119,8 +134,8 @@ delete it.
 Plain JavaScript, no build step.
 
 ```sh
-node --check index.js
-node --check client.js
+npm run check   # node --check on both halves
+npm test        # contract smoke test: loads both halves with stubbed runtimes
 npm pack --dry-run
 ```
 

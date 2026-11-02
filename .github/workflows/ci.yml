@@ -14,9 +14,10 @@ jobs:
           node-version: '22'
 
       - name: Syntax check
-        run: |
-          node --check index.js
-          node --check client.js
+        run: npm run check
+
+      - name: Contract smoke test
+        run: npm test
 
       - name: Manifest sanity
         run: |
