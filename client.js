@@ -177,6 +177,11 @@ window.__ModuleLoader__.load({
         healthVersionUnknown: '版本未知',
         healthFail: 'opencode 不可用：检查「高级」里的启动命令（这里用的是已保存的命令）',
         mainModel: '主模型',
+        refreshModels: '刷新列表',
+        refreshingModels: '刷新中…',
+        catalogFresh: '模型目录更新于 {time}：opencode 现在能看到 {count} 个模型，其中 {free} 个免费。',
+        catalogStale: '列表由「最近用过的模型 + 内置免费清单」组成。点「刷新列表」向 opencode 要一次最新目录。',
+        catalogFail: '拉取模型目录失败：{detail}',
         customOption: '自定义 / 手填…',
         customModel: '模型 id',
         customModelPlaceholder: 'provider/model，例如 opencode/deepseek-v4.1-flash-free',
@@ -270,6 +275,11 @@ window.__ModuleLoader__.load({
         errorPrefix: 'Error: ',
         colon: ': ',
         modelSection: 'Model',
+        refreshModels: 'Refresh list',
+        refreshingModels: 'Refreshing…',
+        catalogFresh: 'Model catalog updated at {time}: opencode currently sees {count} models, {free} of them free.',
+        catalogStale: 'The list is "models you have used + a built-in free list". Use "Refresh list" to ask opencode for its current catalog.',
+        catalogFail: 'Could not refresh the model catalog: {detail}',
         modelHint: 'Model choice on the opencode side: ACP carries no model parameter, so it is set here and injected through OPENCODE_CONFIG_CONTENT. Free quota is per account, so use "Test model" to check availability right now.',
         testModel: 'Test model',
         testingModel: 'Testing…',
@@ -470,7 +480,23 @@ window.__ModuleLoader__.load({
             : [],
           runs: Array.isArray(raw.runs) ? raw.runs.filter((item) => item && typeof item === 'object') : [],
           home: typeof raw.home === 'string' ? raw.home : '',
+          catalog: normalizeCatalog(raw.catalog),
         },
+      }
+    }
+
+    /** A cached catalog is informational only; a malformed one is simply ignored. */
+    function normalizeCatalog(raw) {
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
+      const free = Array.isArray(raw.free)
+        ? raw.free.filter((item) => typeof item === 'string' && item !== '')
+        : []
+      const at = Number(raw.at)
+      const count = Number(raw.count)
+      return {
+        at: Number.isFinite(at) ? at : 0,
+        count: Number.isFinite(count) && count >= 0 ? Math.round(count) : free.length,
+        free,
       }
     }
 
@@ -546,8 +572,15 @@ window.__ModuleLoader__.load({
         : `${date.getFullYear()}-${day} ${time}`
     }
 
-    function duration(ms) {
-      if (!Number.isFinite(ms)) return '—'
+    /** HH:mm, for "catalog updated at" lines. */
+    function clock(ms) {
+      if (!Number.isFinite(ms) || ms <= 0) return '—'
+      const date = new Date(ms)
+      const pad = (value) => String(value).padStart(2, '0')
+      return `${pad(date.getHours())}:${pad(date.getMinutes())}`
+    }
+
+    function duration(ms) {      if (!Number.isFinite(ms)) return '—'
       if (ms < 1000) return `${ms}ms`
       const seconds = ms / 1000
       if (seconds < 60) return `${seconds.toFixed(1)}s`
@@ -708,6 +741,7 @@ window.__ModuleLoader__.load({
       const [busyOps, setBusyOps] = useState([])
       const [probe, setProbe] = useState(null)
       const [health, setHealth] = useState(null)
+      const [catalogOverride, setCatalogOverride] = useState(null)
 
       /* history */
       const [openRun, setOpenRun] = useState(null)
@@ -903,8 +937,37 @@ window.__ModuleLoader__.load({
         }
       }
 
-      const refresh = async () => {
+      const refreshCatalog = async () => {
         if (anyBusy) return
+        begin('catalog')
+        setError('')
+        try {
+          const result = await call(`${PREFIX}/models/refresh`, { method: 'POST', body: '{}' })
+          if (result && result.ok === true) {
+            setCatalogOverride(normalizeCatalog(result))
+            setNoteKind('ok')
+            setNote(
+              t('catalogFresh', {
+                time: clock(result.at),
+                count: String(result.count ?? 0),
+                free: String(Array.isArray(result.free) ? result.free.length : 0),
+              }),
+            )
+          } else {
+            setError(
+              t('catalogFail', {
+                detail: asText(result && result.detail, t('reasonUnknown')),
+              }),
+            )
+          }
+        } catch (cause) {
+          setError(t('catalogFail', { detail: describeActionFailure(cause) }))
+        } finally {
+          end('catalog')
+        }
+      }
+
+      const refresh = async () => {        if (anyBusy) return
         begin('refresh')
         setNote('')
         setError('')
@@ -998,7 +1061,18 @@ window.__ModuleLoader__.load({
         )
       }
 
-      const models = data.models
+      /* Saved catalog (last refresh, persisted by the host) plus the live result
+       * of this session's refresh, which wins when it is newer. */
+      const catalog = catalogOverride !== null ? catalogOverride : data.catalog
+      const models = (() => {
+        const merged = []
+        const push = (id) => {
+          if (typeof id === 'string' && id !== '' && !merged.includes(id)) merged.push(id)
+        }
+        for (const id of Array.isArray(catalog?.free) ? catalog.free : []) push(id)
+        for (const id of data.models) push(id)
+        return merged
+      })()
       const known = models.includes(draft.model)
       const runs = data.runs
       const visibleRuns = showAllRuns ? runs : runs.slice(0, RUNS_PAGE)
@@ -1062,9 +1136,32 @@ window.__ModuleLoader__.load({
                 },
                 busy('health') ? t('checkingHealth') : t('healthCheck'),
               ),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  style: withDisabled(S.button, anyBusy),
+                  onClick: refreshCatalog,
+                  disabled: anyBusy,
+                  title: t('catalogStale'),
+                  'aria-busy': busy('catalog') ? 'true' : undefined,
+                },
+                busy('catalog') ? t('refreshingModels') : t('refreshModels'),
+              ),
             ),
           },
           h('p', { style: S.subHint }, t('probeUsesSaved')),
+          catalog !== null
+            ? h(
+                'p',
+                { style: S.subHint, role: 'status' },
+                t('catalogFresh', {
+                  time: clock(catalog.at),
+                  count: String(catalog.count ?? 0),
+                  free: String(Array.isArray(catalog.free) ? catalog.free.length : 0),
+                }),
+              )
+            : h('p', { style: S.subHint }, t('catalogStale')),
           probe !== null
             ? h(
                 ResultLine,

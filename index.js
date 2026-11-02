@@ -171,6 +171,7 @@ function createStore() {
   const dir = path.join(homeDirectory(), 'opencode-acp')
   const settingsFile = path.join(dir, 'settings.json')
   const runsFile = path.join(dir, 'runs.json')
+  const catalogFile = path.join(dir, 'catalog.json')
   const settings = normalizeSettings(readJsonFile(settingsFile, {}, settingsFile))
   const loaded = readJsonFile(runsFile, [], runsFile)
   const stored = Array.isArray(loaded) ? loaded.filter((r) => r && typeof r === 'object') : []
@@ -184,10 +185,17 @@ function createStore() {
   })
   if (reconciled) writeJsonFile(runsFile, runs)
 
+  const storedCatalog = readJsonFile(catalogFile, null, catalogFile)
+  const catalog =
+    storedCatalog && typeof storedCatalog === 'object' && Array.isArray(storedCatalog.free)
+      ? storedCatalog
+      : null
+
   return {
     dir,
     settings,
     runs,
+    catalog,
     saveSettings(patch) {
       const next = normalizeSettings({ ...this.settings, ...patch })
       /* A settings route must not answer 200 for a change it could not store. */
@@ -206,6 +214,10 @@ function createStore() {
     clearRuns() {
       this.runs = []
       writeJsonFile(runsFile, this.runs)
+    },
+    saveCatalog(next) {
+      this.catalog = next
+      writeJsonFile(catalogFile, next)
     },
   }
 }
@@ -226,6 +238,70 @@ function opencodeModels() {
   }
   for (const id of FALLBACK_MODELS) if (!found.includes(id)) found.push(id)
   return found
+}
+
+/** `opencode models` output cap and bound; a stale cache is better than a hung page. */
+const CATALOG_MAX_BYTES = 4 * 1024 * 1024
+const CATALOG_TIMEOUT_MS = 30000
+
+/** Split `opencode models` output into the total count and the free-tier subset. */
+function parseModelCatalog(text) {
+  let count = 0
+  const free = []
+  for (const raw of String(text).split(/\r?\n/)) {
+    const id = raw.trim()
+    if (id === '' || /\s/.test(id) || !id.includes('/')) continue
+    count += 1
+    if ((id.endsWith('-free') || id.endsWith(':free')) && !free.includes(id)) free.push(id)
+  }
+  return { count, free }
+}
+
+/**
+ * Ask opencode for the catalog it can see right now. This is the only way to
+ * discover models added after this machine last ran opencode, and it costs one
+ * short subprocess.
+ */
+async function readModelCatalog(ctx, settings) {
+  const startedAt = Date.now()
+  let child
+  try {
+    child = ctx.subprocess.spawn({
+      argv: [settings.command, 'models'],
+      cwd: process.cwd(),
+      stdio: { stdin: 'ignore', stdout: { maxBytes: CATALOG_MAX_BYTES }, stderr: { maxBytes: 65536 } },
+      graceMs: 5000,
+      env: opencodeEnv(settings),
+    })
+  } catch (error) {
+    return { ok: false, at: Date.now(), ms: Date.now() - startedAt, detail: boundedDetail(String(error?.message ?? error)) }
+  }
+  let exited = false
+  try {
+    exited = await child.waitForExit(AbortSignal.timeout(CATALOG_TIMEOUT_MS))
+  } catch {
+    exited = false
+  }
+  if (!exited) {
+    try {
+      child.terminate()
+    } catch {
+      /* already gone */
+    }
+    try {
+      await child.waitForExit(AbortSignal.timeout(5000))
+    } catch {
+      /* bounded anyway */
+    }
+  }
+  const stdout = child.collected?.stdout?.readFrom(0).text ?? ''
+  const stderr = child.collected?.stderr?.readFrom(0).text ?? ''
+  const { count, free } = parseModelCatalog(stdout)
+  const ms = Date.now() - startedAt
+  if (count === 0) {
+    return { ok: false, at: Date.now(), ms, detail: boundedDetail(stderr) || 'opencode returned no models' }
+  }
+  return { ok: true, at: Date.now(), ms, count, free }
 }
 
 /* ── ACP run ─────────────────────────────────────────────────────────────── */
@@ -1077,6 +1153,7 @@ function registerRoutes(ctx, store, state) {
           return writeJson(res, 200, {
             settings: store.settings,
             models: opencodeModels(),
+            catalog: store.catalog,
             runs: store.runs,
             home: homeDirectory(),
             health: state.health,
@@ -1105,6 +1182,12 @@ function registerRoutes(ctx, store, state) {
           const result = await probeModel(ctx, store.settings, model)
           state.probe = { ...result, at: Date.now() }
           return writeJson(res, 200, state.probe)
+        }
+        if (route === `${ROUTE_PREFIX}/models/refresh` && req.method === 'POST') {
+          if (!admitPost(req, res)) return undefined
+          const catalog = await readModelCatalog(ctx, store.settings)
+          if (catalog.ok) store.saveCatalog(catalog)
+          return writeJson(res, 200, catalog)
         }
         if (route === `${ROUTE_PREFIX}/runs/clear` && req.method === 'POST') {
           if (!admitPost(req, res)) return undefined
