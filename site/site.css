@@ -11,8 +11,8 @@
   --line: rgba(140, 160, 178, 0.2);
   --line-strong: rgba(140, 160, 178, 0.38);
 
-  --serif: Georgia, "Iowan Old Style", "Palatino Linotype", ui-serif, serif;
-  --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Songti SC", "Source Han Serif SC", "Noto Serif CJK SC", "SimSun", ui-serif, serif;
+  --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, "Sarasa Mono SC", "Liberation Mono", monospace;
 
   --page: 1200px;
   --gutter: clamp(20px, 4vw, 48px);
@@ -148,6 +148,48 @@ code {
 .mark {
   display: block;
   flex: none;
+}
+
+html:not(.js) .lang {
+  display: none;
+}
+
+.nav__right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.lang {
+  display: inline-flex;
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.lang__btn {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1;
+  padding: 7px 9px;
+  border: 0;
+  background: transparent;
+  color: var(--wire);
+  cursor: pointer;
+  transition: background-color 160ms var(--ease), color 160ms var(--ease);
+}
+
+.lang__btn + .lang__btn {
+  border-left: 1px solid var(--line-strong);
+}
+
+.lang__btn:hover {
+  color: var(--paper);
+}
+
+.lang__btn[aria-pressed="true"] {
+  background: var(--signal);
+  color: var(--ink);
 }
 
 .nav__links {
@@ -560,25 +602,22 @@ html:not(.js) .record-bar span {
   border-right: 7px solid var(--paper);
 }
 
-.throat__out::before,
-.throat__back::after {
+.throat__label {
   position: absolute;
   font-family: var(--mono);
   font-size: 10.5px;
   letter-spacing: 0.02em;
 }
 
-.throat__out::before {
-  content: "task";
+.throat__label--task {
   right: 0;
-  top: -16px;
+  top: calc(62% - 20px);
   color: var(--signal);
 }
 
-.throat__back::after {
-  content: "answer";
+.throat__label--answer {
   left: 0;
-  top: 8px;
+  top: calc(38% + 12px);
   color: var(--paper);
 }
 
@@ -1220,5 +1259,61 @@ html:not(.js) .record-bar span {
 
   .rail__fill {
     transform: scaleY(1);
+  }
+}
+
+/* ── Chinese typography ──────────────────────────────────────────────────── */
+
+[lang="zh-Hans"] .hero h1 {
+  line-height: 1.16;
+  letter-spacing: 0;
+}
+
+[lang="zh-Hans"] .lead {
+  line-height: 1.85;
+  max-width: 30em;
+}
+
+[lang="zh-Hans"] .band__body p,
+[lang="zh-Hans"] .section__head p,
+[lang="zh-Hans"] .how__sticky p,
+[lang="zh-Hans"] .facts dd,
+[lang="zh-Hans"] .frame p:last-child,
+[lang="zh-Hans"] .limits {
+  line-height: 1.9;
+  max-width: 30em;
+}
+
+[lang="zh-Hans"] .frame p:last-child {
+  max-width: 30em;
+}
+
+[lang="zh-Hans"] .kicker,
+[lang="zh-Hans"] .wire__caption,
+[lang="zh-Hans"] .section__head .note {
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 640px) {
+  .nav__inner {
+    gap: 12px;
+  }
+
+  html:not(.js) .lang {
+  display: none;
+}
+
+.nav__right {
+    gap: 14px;
+  }
+
+  .nav__links {
+    gap: 14px;
+    font-size: 12px;
+  }
+
+  .lang__btn {
+    padding: 6px 7px;
+    font-size: 11px;
   }
 }

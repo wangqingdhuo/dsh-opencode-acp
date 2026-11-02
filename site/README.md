@@ -7,9 +7,13 @@ fonts or images — upload the folder as it is.
 site/
 ├── index.html
 ├── site.css
-├── site.js
+├── site.js       (all copy lives in the I18N table at the top)
 └── assets/mark.svg
 ```
+
+The page ships in **Chinese by default**; the `中文 / EN` switch in the nav
+remembers the choice in `localStorage`, and `?lang=en` (or `?lang=zh`) links
+straight to one language.
 
 ## Host it
 
@@ -34,19 +38,26 @@ It also opens straight from `file://` — the copy buttons fall back to
 
 ## Edit
 
-- Copy and links: `index.html` (the version string appears in the nav and footer).
+- **Copy (both languages)**: the `I18N` object at the top of `site.js`
+  (`zh` and `en` tables must keep the same keys). Markup carries the Chinese
+  fallback in `data-i18n` / `data-i18n-html` attributes, so the page still reads
+  correctly before JavaScript runs.
 - Colors, type, spacing: the `:root` block in `site.css` (two temperatures:
-  `--wire` for the host half, `--signal` for the child process).
+  `--wire` for the host half, `--signal` for the child process). Chinese type is
+  tuned separately under `[lang="zh-Hans"]`.
 - Motion: three blocks in `site.js` — the hero run (`M1`), the frame rail
   (`M2`), and the acknowledgment handlers (`M3`). Behaviour under
-  `prefers-reduced-motion` and below 640px is CSS/static.
+  `prefers-reduced-motion`, without JavaScript, and below 640px is CSS/static.
 
 ## Check before uploading
 
-1. Open the page; the hero wire should play once and stop.
-2. Press the copy button; it should say “Copied” and a status line should appear.
-3. Open a run row; the detail line should expand and the box change to `−`.
-4. Resize to 390px: the canvas is replaced by the static frame list, nothing
-   overflows horizontally.
-5. With “reduce motion” enabled in the OS, the page should render its final
-   state immediately, with no animation.
+1. Open the page: it should be Chinese; the hero wire plays once and stops.
+2. Press `EN`: every string flips (including the canvas labels and the table
+   headers), and reloading keeps English.
+3. Press `中文`: back to Chinese, no English left except product names and code.
+4. Copy button: label becomes `已复制` / `Copied`, status line announces it.
+5. A run row expands; the box turns `−`.
+6. 390px: the canvas is replaced by the frame list, no horizontal overflow.
+7. Reduce motion in the OS: final state immediately, no animation.
+8. Disable JavaScript: Chinese content is fully visible, the switch is hidden,
+   the static frame list stands in for the canvas.

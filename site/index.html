@@ -1,24 +1,25 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-Hans">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>dsh-opencode-acp — run opencode as a subagent inside DeepSeek Harness</title>
-<meta name="description" content="A DeepSeek Harness plugin that runs opencode as an ACP subagent: one task leaves your conversation, the child process does the work with its own models, and the answer comes back. Every run leaves a record.">
+<title>dsh-opencode-acp — 把 opencode 接成 DeepSeek Harness 的子代理</title>
+<meta name="description" content="一个 DeepSeek Harness 插件：把任务交给 opencode 的独立进程，用它的模型和工具干活，只把答案带回来。每次运行都有记录。">
 <meta name="color-scheme" content="dark">
 <meta property="og:title" content="dsh-opencode-acp">
-<meta property="og:description" content="Run opencode as a subagent inside DeepSeek Harness. One task leaves, one answer returns.">
+<meta property="og:description" content="把 opencode 接成 DeepSeek Harness 的子代理。任务出去，答案回来。">
 <meta property="og:type" content="website">
+<meta property="og:locale" content="zh_CN">
 <link rel="icon" href="assets/mark.svg" type="image/svg+xml">
 <link rel="stylesheet" href="site.css">
 <script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
-<a class="skip" href="#main">Skip to content</a>
+<a class="skip" href="#main" data-i18n="nav.skip">跳到正文</a>
 
 <header class="nav">
   <div class="nav__inner">
-    <a class="nav__mark" href="#top" aria-label="dsh-opencode-acp, top of page">
+    <a class="nav__mark" href="#top" aria-label="dsh-opencode-acp，回到顶部">
       <svg class="mark" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
         <path d="M3 12h7.5" stroke="#8CA0B2" stroke-width="1.4"/>
         <path d="M13.5 12H21" stroke="#F0A03A" stroke-width="1.4"/>
@@ -27,11 +28,17 @@
       </svg>
       <span>dsh-opencode-acp</span>
     </a>
-    <nav class="nav__links" aria-label="Project links">
-      <a href="https://www.npmjs.com/package/dsh-opencode-acp" rel="noopener">npm</a>
-      <a href="https://github.com/wangqingdhuo/dsh-opencode-acp" rel="noopener">GitHub</a>
-      <span class="nav__version">v0.3.1</span>
-    </nav>
+    <div class="nav__right">
+      <div class="lang" role="group" aria-label="语言 / Language">
+        <button type="button" class="lang__btn" data-lang="zh" aria-pressed="true" lang="zh-Hans">中文</button>
+        <button type="button" class="lang__btn" data-lang="en" aria-pressed="false" lang="en">EN</button>
+      </div>
+      <nav class="nav__links" aria-label="项目链接">
+        <a href="https://www.npmjs.com/package/dsh-opencode-acp" rel="noopener">npm</a>
+        <a href="https://github.com/wangqingdhuo/dsh-opencode-acp" rel="noopener">GitHub</a>
+        <span class="nav__version">v0.3.1</span>
+      </nav>
+    </div>
   </div>
 </header>
 
@@ -39,24 +46,23 @@
 
   <section class="hero" id="top" aria-labelledby="hero-title">
     <div class="hero__copy">
-      <p class="kicker">DeepSeek Harness plugin</p>
+      <p class="kicker" data-i18n="hero.kicker">DeepSeek Harness 插件</p>
       <h1 id="hero-title">
-        <span class="line"><span>Run opencode as a</span></span>
-        <span class="line"><span>subagent inside</span></span>
-        <span class="line"><span>DeepSeek Harness.</span></span>
+        <span class="line"><span data-i18n="hero.line1">把 opencode 变成</span></span>
+        <span class="line"><span data-i18n="hero.line2">DeepSeek Harness</span></span>
+        <span class="line"><span data-i18n="hero.line3">里的子代理。</span></span>
       </h1>
-      <p class="lead">
-        One task leaves your conversation. opencode runs it in its own process, with its own
-        models. The answer comes back. Nothing else does.
+      <p class="lead" data-i18n="hero.lead">
+        一个任务离开你的对话，进入 opencode 自己的进程，用它自己的模型跑完。答案回来，别的都不回来。
       </p>
       <div class="actions">
         <button class="btn btn--primary" type="button" data-copy="dsh plugin --profile default add dsh-opencode-acp">
-          <span class="btn__label">Copy install command</span>
+          <span class="btn__label" data-i18n="hero.cta">复制安装命令</span>
           <span class="btn__mark" aria-hidden="true"></span>
         </button>
-        <a class="link" href="https://github.com/wangqingdhuo/dsh-opencode-acp" rel="noopener">Read the source</a>
+        <a class="link" href="https://github.com/wangqingdhuo/dsh-opencode-acp" rel="noopener" data-i18n="hero.secondary">看源码</a>
       </div>
-      <p class="zh" lang="zh-Hans">两条 harness，一段对话。<br>子进程带走任务，只把答案送回来。</p>
+      <p class="zh" lang="en">Two harnesses, one conversation.<br>The child takes the task and returns only the answer.</p>
     </div>
 
     <figure class="wire" id="wire">
@@ -68,32 +74,32 @@
       <div class="wire__stage">
         <canvas id="wire-canvas" height="92" aria-hidden="true"></canvas>
         <p class="wire__legend" aria-hidden="true">
-          <span class="wire__legend-tag">out</span>
+          <span class="wire__legend-tag" data-i18n="wire.out">发出</span>
           <span>initialize</span>
           <span>session/new</span>
           <span>session/prompt</span>
-          <span class="wire__legend-tag wire__legend-tag--in">in</span>
+          <span class="wire__legend-tag wire__legend-tag--in" data-i18n="wire.in">返回</span>
           <span>agent_message_chunk ×5</span>
           <span>usage_update</span>
         </p>
-        <ol class="wire__static" aria-label="One shortened run: requests out, answer back">
-          <li><b>out</b> initialize</li>
-          <li><b>out</b> session/new</li>
-          <li><b>out</b> session/prompt</li>
-          <li><b>in</b> agent_message_chunk ×5</li>
-          <li><b>in</b> usage_update</li>
+        <ol class="wire__static" aria-label="一次被缩短的运行：请求出去，答案回来">
+          <li><b data-i18n="wire.out">发出</b> initialize</li>
+          <li><b data-i18n="wire.out">发出</b> session/new</li>
+          <li><b data-i18n="wire.out">发出</b> session/prompt</li>
+          <li><b data-i18n="wire.in">返回</b> agent_message_chunk ×5</li>
+          <li><b data-i18n="wire.in">返回</b> usage_update</li>
         </ol>
       </div>
 
-      <p class="wire__caption">One run, shortened. Method names are the ones the README documents.</p>
+      <p class="wire__caption" data-i18n="wire.caption">一次运行，已缩短。方法名就是 README 里写的那些。</p>
     </figure>
 
-    <div class="record-bar" role="group" aria-label="Example run record">
-      <span><i>run</i> 0f3a9c</span>
-      <span><i>model</i> big-pickle</span>
-      <span><i>duration</i> 42.1s</span>
-      <span><i>tokens</i> 3,204</span>
-      <span class="record-bar__state">done</span>
+    <div class="record-bar" role="group" aria-label="示例运行记录">
+      <span><i data-i18n="record.run">运行</i> 0f3a9c</span>
+      <span><i data-i18n="record.model">模型</i> big-pickle</span>
+      <span><i data-i18n="record.duration">耗时</i> 42.1s</span>
+      <span><i data-i18n="record.tokens">token</i> 3,204</span>
+      <span class="record-bar__state" data-i18n="record.done">完成</span>
     </div>
   </section>
 
@@ -103,105 +109,105 @@
         <span class="throat__rule"></span>
         <span class="throat__back"></span>
         <span class="throat__out"></span>
+        <span class="throat__label throat__label--task" data-i18n="throat.task">任务</span>
+        <span class="throat__label throat__label--answer" data-i18n="throat.answer">答案</span>
       </div>
     </div>
     <div class="band__body">
-      <h2 id="isolation-title">Two harnesses, one conversation.</h2>
-      <p>
-        DSH stays the driver. opencode brings its own models, tools and free tier, and nothing it
-        does lands in your context or your token bill. The child receives the task text and the
-        working directory. Not the history, not the plan, not the files it did not ask for.
+      <h2 id="isolation-title" data-i18n="band.title">两个 harness，一段对话。</h2>
+      <p data-i18n="band.body">
+        DSH 继续当驾驶。opencode 带来它自己的模型、工具和免费额度，它做的一切都不会进你的上下文，也不进你的账单。
+        子进程只拿到任务文本和工作目录：没有历史，没有计划，也没有它没要的文件。
       </p>
     </div>
   </section>
 
   <section class="section" id="records" aria-labelledby="records-title">
     <header class="section__head">
-      <h2 id="records-title">Every run leaves a record.</h2>
-      <p>
-        The plugin speaks ACP itself, so it keeps the session id, model, duration, tool calls and
-        tokens that the official provider drops. The last row is the failure worth keeping: it is
-        the one that tells you what to fix.
+      <h2 id="records-title" data-i18n="records.title">每次运行都留下记录。</h2>
+      <p data-i18n="records.body">
+        这个插件自己实现了 ACP，所以官方 provider 丢掉的东西它都留着：子进程的会话 id、真正跑的是哪个模型、
+        耗时、工具调用次数和 token。最后一行是一次值得保留的失败——它才是告诉你要修什么的那条。
       </p>
-      <p class="note">Example record. Fields match <code>runs.json</code>.</p>
+      <p class="note" data-i18n-html="records.note">示例记录。字段与 <code>runs.json</code> 一致。</p>
     </header>
 
     <div class="table-wrap">
       <table class="records">
-        <caption class="sr-only">Example run records</caption>
+        <caption class="sr-only">示例运行记录</caption>
         <thead>
           <tr>
-            <th scope="col">started</th>
-            <th scope="col">model</th>
-            <th scope="col">dir</th>
-            <th scope="col">ms</th>
-            <th scope="col">tokens</th>
-            <th scope="col">state</th>
-            <th scope="col"><span class="sr-only">detail</span></th>
+            <th scope="col" data-i18n="records.th.started">开始</th>
+            <th scope="col" data-i18n="records.th.model">模型</th>
+            <th scope="col" data-i18n="records.th.dir">目录</th>
+            <th scope="col" data-i18n="records.th.ms">毫秒</th>
+            <th scope="col" data-i18n="records.th.tokens">token</th>
+            <th scope="col" data-i18n="records.th.state">状态</th>
+            <th scope="col"><span class="sr-only">详情</span></th>
           </tr>
         </thead>
         <tbody>
           <tr class="records__row" data-row="1">
-            <th scope="row" data-label="started">11:42:07</th>
-            <td data-label="model">opencode/deepseek-v4.1-flash-free</td>
-            <td data-label="dir">repo/web</td>
-            <td class="num" data-label="ms">6,317</td>
-            <td class="num" data-label="tokens">↑13,543 ↓81</td>
-            <td data-label="state"><span class="dot dot--ok" aria-hidden="true"></span>completed</td>
-            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-1" aria-label="Show detail for the run started at 11:42:07">+</button></td>
+            <th scope="row">11:42:07</th>
+            <td data-label="模型">opencode/deepseek-v4.1-flash-free</td>
+            <td data-label="目录">repo/web</td>
+            <td class="num" data-label="毫秒">6,317</td>
+            <td class="num" data-label="token">↑13,543 ↓81</td>
+            <td><span class="dot dot--ok" aria-hidden="true"></span><span data-i18n="records.state.done">完成</span></td>
+            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-1" aria-label="显示 11:42:07 这次运行的详情">+</button></td>
           </tr>
           <tr class="records__detail" id="detail-1" hidden>
             <td colspan="7">
-              <span>session <code>ses_e65a42f4bffeGE7vnHDIydlA2W</code></span>
-              <span>tool calls 1</span>
-              <span>cache read 1,536</span>
+              <span><span data-i18n="records.session">会话</span> <code>ses_e65a42f4bffeGE7vnHDIydlA2W</code></span>
+              <span><span data-i18n="records.toolCalls">工具调用</span> 1</span>
+              <span><span data-i18n="records.cacheRead">缓存读取</span> 1,536</span>
             </td>
           </tr>
           <tr class="records__row" data-row="2">
-            <th scope="row" data-label="started">11:36:22</th>
-            <td data-label="model">opencode-go/deepseek-v4.1-flash</td>
-            <td data-label="dir">repo/api</td>
-            <td class="num" data-label="ms">4,102</td>
-            <td class="num" data-label="tokens">↑8,914 ↓204</td>
-            <td data-label="state"><span class="dot dot--ok" aria-hidden="true"></span>completed</td>
-            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-2" aria-label="Show detail for the run started at 11:36:22">+</button></td>
+            <th scope="row">11:36:22</th>
+            <td data-label="模型">opencode-go/deepseek-v4.1-flash</td>
+            <td data-label="目录">repo/api</td>
+            <td class="num" data-label="毫秒">4,102</td>
+            <td class="num" data-label="token">↑8,914 ↓204</td>
+            <td><span class="dot dot--ok" aria-hidden="true"></span><span data-i18n="records.state.done">完成</span></td>
+            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-2" aria-label="显示 11:36:22 这次运行的详情">+</button></td>
           </tr>
           <tr class="records__detail" id="detail-2" hidden>
             <td colspan="7">
-              <span>session <code>ses_e88b32371ffevUU9BrCsAglXe7</code></span>
-              <span>tool calls 1</span>
-              <span>cache read 0</span>
+              <span><span data-i18n="records.session">会话</span> <code>ses_e88b32371ffevUU9BrCsAglXe7</code></span>
+              <span><span data-i18n="records.toolCalls">工具调用</span> 1</span>
+              <span><span data-i18n="records.cacheRead">缓存读取</span> 0</span>
             </td>
           </tr>
           <tr class="records__row" data-row="3">
-            <th scope="row" data-label="started">10:58:03</th>
-            <td data-label="model">opencode/glm-5.3-flash-free</td>
-            <td data-label="dir">repo/docs</td>
-            <td class="num" data-label="ms">31,884</td>
-            <td class="num" data-label="tokens">↑21,077 ↓1,340</td>
-            <td data-label="state"><span class="dot dot--ok" aria-hidden="true"></span>completed</td>
-            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-3" aria-label="Show detail for the run started at 10:58:03">+</button></td>
+            <th scope="row">10:58:03</th>
+            <td data-label="模型">opencode/glm-5.3-flash-free</td>
+            <td data-label="目录">repo/docs</td>
+            <td class="num" data-label="毫秒">31,884</td>
+            <td class="num" data-label="token">↑21,077 ↓1,340</td>
+            <td><span class="dot dot--ok" aria-hidden="true"></span><span data-i18n="records.state.done">完成</span></td>
+            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-3" aria-label="显示 10:58:03 这次运行的详情">+</button></td>
           </tr>
           <tr class="records__detail" id="detail-3" hidden>
             <td colspan="7">
-              <span>session <code>ses_ea8efeda0fferBUYDHH9Kd2RcL</code></span>
-              <span>tool calls 4</span>
-              <span>cache read 9,472</span>
+              <span><span data-i18n="records.session">会话</span> <code>ses_ea8efeda0fferBUYDHH9Kd2RcL</code></span>
+              <span><span data-i18n="records.toolCalls">工具调用</span> 4</span>
+              <span><span data-i18n="records.cacheRead">缓存读取</span> 9,472</span>
             </td>
           </tr>
           <tr class="records__row records__row--fault" data-row="4">
-            <th scope="row" data-label="started">10:03:11</th>
-            <td data-label="model">opencode/deepseek-v4.1-flash-free</td>
-            <td data-label="dir">repo/web</td>
-            <td class="num" data-label="ms">3,967</td>
-            <td class="num" data-label="tokens">—</td>
-            <td data-label="state"><span class="dot dot--fault" aria-hidden="true"></span>free-limit</td>
-            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-4" aria-label="Show detail for the run started at 10:03:11">+</button></td>
+            <th scope="row">10:03:11</th>
+            <td data-label="模型">opencode/deepseek-v4.1-flash-free</td>
+            <td data-label="目录">repo/web</td>
+            <td class="num" data-label="毫秒">3,967</td>
+            <td class="num" data-label="token">—</td>
+            <td><span class="dot dot--fault" aria-hidden="true"></span><span data-i18n="records.state.fault">额度用尽</span></td>
+            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-4" aria-label="显示 10:03:11 这次运行的详情">+</button></td>
           </tr>
           <tr class="records__detail" id="detail-4" hidden>
             <td colspan="7">
               <span class="fault">stage prompt · category free-limit</span>
-              <span>Free usage limit reached. Connect a provider or subscribe to OpenCode Go to keep going, or switch models.</span>
+              <span data-i18n="records.faultText">opencode 报免费额度用完：接一个 provider，或订阅 OpenCode Go，或者换一个模型。</span>
             </td>
           </tr>
         </tbody>
@@ -211,96 +217,105 @@
 
   <section class="section how" id="how" aria-labelledby="how-title">
     <div class="how__sticky">
-      <h2 id="how-title">Six frames. One answer.</h2>
-      <p>
-        DSH speaks ACP itself, so it can keep what the official provider drops: the session id on
-        the child side, the model that ran, the duration, the tokens.
+      <h2 id="how-title" data-i18n="how.title">六帧，一个答案。</h2>
+      <p data-i18n="how.body">
+        因为 DSH 自己讲 ACP，它才能留下官方 provider 丢掉的那部分：子进程侧的会话 id、真正跑的模型、耗时、token。
       </p>
       <div class="rail" aria-hidden="true"><span class="rail__fill"></span></div>
     </div>
     <ol class="frames">
       <li class="frame">
-        <p class="frame__head"><span class="frame__method">initialize</span><span class="frame__dir">out</span></p>
-        <p>Protocol version, client capabilities. The child agrees to speak ACP before anything is asked of it.</p>
+        <p class="frame__head"><span class="frame__method">initialize</span><span class="frame__dir" data-i18n="frame.out">发出</span></p>
+        <p data-i18n="frame.1">协议版本、客户端能力。子进程先同意讲 ACP，之后才对它提要求。</p>
       </li>
       <li class="frame">
-        <p class="frame__head"><span class="frame__method">session/new</span><span class="frame__dir">out</span></p>
-        <p>A session is created inside opencode, bound to the directory the delegation was started from.</p>
+        <p class="frame__head"><span class="frame__method">session/new</span><span class="frame__dir" data-i18n="frame.out">发出</span></p>
+        <p data-i18n="frame.2">在 opencode 里开一个会话，绑定到这次委派发起时所在的目录。</p>
       </li>
       <li class="frame">
-        <p class="frame__head"><span class="frame__method">session/prompt</span><span class="frame__dir">out</span></p>
-        <p>The task text crosses the boundary. That is the whole payload: no history, no attachments, no parent context.</p>
+        <p class="frame__head"><span class="frame__method">session/prompt</span><span class="frame__dir" data-i18n="frame.out">发出</span></p>
+        <p data-i18n="frame.3">任务文本越过边界。载荷就这些：没有历史、没有附件、没有父级上下文。</p>
       </li>
       <li class="frame">
-        <p class="frame__head"><span class="frame__method">agent_message_chunk</span><span class="frame__dir frame__dir--in">in</span></p>
-        <p>The answer streams back as chunks. Only text is collected; tool traffic stays in the child's session.</p>
+        <p class="frame__head"><span class="frame__method">agent_message_chunk</span><span class="frame__dir frame__dir--in" data-i18n="frame.in">返回</span></p>
+        <p data-i18n="frame.4">答案以分片流式回来。只收集文本，工具调用留在子进程自己的会话里。</p>
       </li>
       <li class="frame">
-        <p class="frame__head"><span class="frame__method">usage_update</span><span class="frame__dir frame__dir--in">in</span></p>
-        <p>Tokens this run spent, recorded beside the model and duration when the answer lands.</p>
+        <p class="frame__head"><span class="frame__method">usage_update</span><span class="frame__dir frame__dir--in" data-i18n="frame.in">返回</span></p>
+        <p data-i18n="frame.5">这次运行花掉的 token，答案落地时和模型、耗时记在一起。</p>
       </li>
       <li class="frame">
-        <p class="frame__head"><span class="frame__method">record</span><span class="frame__dir">write</span></p>
-        <p>Session id, model, milliseconds, tool calls, usage. Readable in the settings page as soon as the run settles.</p>
+        <p class="frame__head"><span class="frame__method">record</span><span class="frame__dir" data-i18n="frame.write">写入</span></p>
+        <p data-i18n="frame.6">会话 id、模型、毫秒、工具调用、用量。运行一结束，设置页里就能看到。</p>
       </li>
     </ol>
   </section>
 
   <section class="section" id="models" aria-labelledby="models-title">
     <header class="section__head">
-      <h2 id="models-title">Its free tier, not yours.</h2>
-      <p>
-        Refresh opencode's catalog from Settings, then spend one real request to test the saved
-        model before you trust it. Free quota is per account and moves; the page tells you which
-        model answered and which one refused.
+      <h2 id="models-title" data-i18n="models.title">用的是它的免费额度。</h2>
+      <p data-i18n="models.body">
+        模型目录在设置页刷新，然后花一次真实请求测一下已保存的模型，再决定信不信它。免费额度按账号走、还会变，
+        页面会告诉你哪个模型答了、哪个模型拒了。
       </p>
     </header>
     <dl class="facts">
-      <div><dt>Refresh catalog</dt><dd><code>opencode models</code> → free-tier entries merged into the picker, cached in <code>catalog.json</code></dd></div>
-      <div><dt>Test model</dt><dd>one throwaway ACP session against the saved model; the failure text is kept as the record's diagnostic</dd></div>
-      <div><dt>Settings</dt><dd>model, small model, permission policy, working directory — read at the start of every delegation</dd></div>
-      <div><dt>Failure you can read</dt><dd><code>provider.free-limit</code> · <code>provider.internal</code> · exit code · bounded stderr tail</dd></div>
+      <div>
+        <dt data-i18n="models.dt1">刷新目录</dt>
+        <dd data-i18n-html="models.dd1">跑一次 <code>opencode models</code>，把免费档模型并进下拉，缓存在 <code>catalog.json</code></dd>
+      </div>
+      <div>
+        <dt data-i18n="models.dt2">测试模型</dt>
+        <dd data-i18n="models.dd2">用已保存的模型起一个一次性 ACP 会话；失败原文会作为诊断留在记录里</dd>
+      </div>
+      <div>
+        <dt data-i18n="models.dt3">设置</dt>
+        <dd data-i18n="models.dd3">模型、小模型、权限策略、工作目录——每次委派开始时读取</dd>
+      </div>
+      <div>
+        <dt data-i18n="models.dt4">读得懂的失败</dt>
+        <dd data-i18n-html="models.dd4"><code>provider.free-limit</code> · <code>provider.internal</code> · 退出码 · 有截断的 stderr</dd>
+      </div>
     </dl>
   </section>
 
   <section class="section install" id="install" aria-labelledby="install-title">
     <header class="section__head">
-      <h2 id="install-title">Install it, then send one delegation.</h2>
-      <p>Requirements: DSH <code>&gt;=0.2.1-rc.1 &lt;0.3.0</code>, opencode v2 with the <code>acp</code> subcommand, and an existing opencode login.</p>
+      <h2 id="install-title" data-i18n="install.title">装上，然后发一次委派。</h2>
+      <p data-i18n-html="install.req">要求：DSH <code>&gt;=0.2.1-rc.1 &lt;0.3.0</code>，opencode v2 且带 <code>acp</code> 子命令，以及一个已经登录过的 opencode。</p>
     </header>
 
     <div class="steps">
       <div class="step">
-        <p class="step__label">Add the plugin</p>
+        <p class="step__label" data-i18n="step.1.label">加插件</p>
         <div class="cmd">
           <code>dsh plugin --profile default add dsh-opencode-acp</code>
-          <button class="btn btn--small" type="button" data-copy="dsh plugin --profile default add dsh-opencode-acp"><span class="btn__label">Copy</span><span class="btn__mark" aria-hidden="true"></span></button>
+          <button class="btn btn--small" type="button" data-copy="dsh plugin --profile default add dsh-opencode-acp"><span class="btn__label" data-i18n="copy.short">复制</span><span class="btn__mark" aria-hidden="true"></span></button>
         </div>
       </div>
       <div class="step">
-        <p class="step__label">Set the model</p>
-        <p class="step__text">Settings → OpenCode 委派. Refresh the catalog, test one model, keep it.</p>
+        <p class="step__label" data-i18n="step.2.label">选模型</p>
+        <p class="step__text" data-i18n="step.2.text">设置 → OpenCode 委派。刷新目录，测一个能用的，留着。</p>
       </div>
       <div class="step">
-        <p class="step__label">Delegate</p>
-        <p class="step__text">Ask your agent, or call <code>subagent_opencode</code> directly. The answer arrives as a completion notice.</p>
+        <p class="step__label" data-i18n="step.3.label">发委派</p>
+        <p class="step__text" data-i18n-html="step.3.text">直接跟 agent 说，或者调 <code>subagent_opencode</code>。答案会作为完成通知回来。</p>
       </div>
     </div>
 
     <div class="actions actions--end">
-      <button class="btn btn--primary" type="button" data-copy="dsh plugin --profile default add dsh-opencode-acp"><span class="btn__label">Copy install command</span><span class="btn__mark" aria-hidden="true"></span></button>
-      <a class="link" href="https://github.com/wangqingdhuo/dsh-opencode-acp#readme" rel="noopener">Read the source</a>
+      <button class="btn btn--primary" type="button" data-copy="dsh plugin --profile default add dsh-opencode-acp"><span class="btn__label" data-i18n="hero.cta">复制安装命令</span><span class="btn__mark" aria-hidden="true"></span></button>
+      <a class="link" href="https://github.com/wangqingdhuo/dsh-opencode-acp#readme" rel="noopener" data-i18n="hero.secondary">看源码</a>
     </div>
 
-    <p class="limits">
-      Limits, in the same breath: one-shot, no follow-ups · a fresh process per run · the child runs
-      as you and is not sandboxed · the local settings routes are unauthenticated by design, bound to
-      loopback.
+    <p class="limits" data-i18n="limits">
+      限制也一起说清楚：一次性执行、不能追问 · 每次运行新起一个进程 · 子进程用你的账号跑，不受沙箱约束 ·
+      本地设置路由按设计不做鉴权，只监听回环。
     </p>
 
     <noscript>
-      <p class="limits">JavaScript is off, so the copy buttons do nothing here. Run
-        <code>dsh plugin --profile default add dsh-opencode-acp</code> in a terminal.</p>
+      <p class="limits">没有 JS，复制按钮不会工作。请在终端里执行
+        <code>dsh plugin --profile default add dsh-opencode-acp</code>。</p>
     </noscript>
   </section>
 </main>
@@ -308,7 +323,7 @@
 <footer class="foot">
   <div class="foot__inner">
     <span>MIT · <a href="https://github.com/wangqingdhuo/dsh-opencode-acp" rel="noopener">wangqingdhuo/dsh-opencode-acp</a></span>
-    <span class="foot__note">Record values are example data from a real machine.</span>
+    <span class="foot__note" data-i18n="foot.note">记录里的数值来自一台真实机器的示例数据。</span>
   </div>
 </footer>
 
