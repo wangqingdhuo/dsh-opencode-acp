@@ -4,3 +4,7 @@ node_modules/
 dist/
 .DS_Store
 Thumbs.db
+
+site/.shots/
+site/.review/
+

@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dsh-opencode-acp — run opencode as a subagent inside DeepSeek Harness</title>
+<meta name="description" content="A DeepSeek Harness plugin that runs opencode as an ACP subagent: one task leaves your conversation, the child process does the work with its own models, and the answer comes back. Every run leaves a record.">
+<meta name="color-scheme" content="dark">
+<meta property="og:title" content="dsh-opencode-acp">
+<meta property="og:description" content="Run opencode as a subagent inside DeepSeek Harness. One task leaves, one answer returns.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav">
+  <a class="nav__mark" href="#top" aria-label="dsh-opencode-acp, top of page">
+    <svg class="mark" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+      <path d="M3 12h7.5" stroke="#8CA0B2" stroke-width="1.4"/>
+      <path d="M13.5 12H21" stroke="#F0A03A" stroke-width="1.4"/>
+      <circle cx="12" cy="12" r="1.6" fill="#E9E4D9"/>
+      <path d="M12 3v5.2M12 15.8V21" stroke="rgba(140,160,178,.55)" stroke-width="1"/>
+    </svg>
+    <span>dsh-opencode-acp</span>
+  </a>
+  <nav class="nav__links" aria-label="Project links">
+    <a href="https://www.npmjs.com/package/dsh-opencode-acp" rel="noopener">npm</a>
+    <a href="https://github.com/wangqingdhuo/dsh-opencode-acp" rel="noopener">GitHub</a>
+    <span class="nav__version">v0.3.2</span>
+  </nav>
+</header>
+
+<main id="main">
+
+  <section class="hero" id="top" aria-labelledby="hero-title">
+    <div class="hero__copy">
+      <p class="kicker">DeepSeek Harness plugin</p>
+      <h1 id="hero-title">
+        <span class="line"><span>Run opencode as a</span></span>
+        <span class="line"><span>subagent inside</span></span>
+        <span class="line"><span>DeepSeek Harness.</span></span>
+      </h1>
+      <p class="lead">
+        One task leaves your conversation. opencode runs it in its own process, with its own
+        models. The answer comes back. Nothing else does.
+      </p>
+      <div class="actions">
+        <button class="btn btn--primary" type="button" data-copy="dsh plugin --profile default add dsh-opencode-acp">
+          <span class="btn__label">Copy install command</span>
+          <span class="btn__mark" aria-hidden="true"></span>
+        </button>
+        <a class="link" href="https://github.com/wangqingdhuo/dsh-opencode-acp" rel="noopener">Read the source</a>
+      </div>
+      <p class="zh" lang="zh-Hans">两条 harness，一段对话。<br>子进程带走任务，只把答案送回来。</p>
+    </div>
+
+    <figure class="wire" id="wire">
+      <figcaption class="wire__head">
+        <span>DSH</span>
+        <span class="wire__boundary">process boundary</span>
+        <span>opencode acp</span>
+      </figcaption>
+
+      <div class="wire__stage">
+        <canvas id="wire-canvas" height="120" aria-hidden="true"></canvas>
+        <p class="wire__legend" aria-hidden="true">
+          <span class="wire__legend-tag">out</span>
+          <span>initialize</span>
+          <span>session/new</span>
+          <span>session/prompt</span>
+          <span class="wire__legend-tag wire__legend-tag--in">in</span>
+          <span>agent_message_chunk ×5</span>
+          <span>usage_update</span>
+        </p>
+        <ol class="wire__static" aria-label="One shortened run">
+          <li><b>out</b> initialize</li>
+          <li><b>out</b> session/new</li>
+          <li><b>out</b> session/prompt</li>
+          <li><b>in</b> agent_message_chunk ×5</li>
+          <li><b>in</b> usage_update</li>
+        </ol>
+      </div>
+
+      <p class="wire__caption">One run, shortened. Method names are the ones the README documents.</p>
+    </figure>
+
+    <div class="record-bar" aria-label="Example run record">
+      <span><i>run</i> 0f3a9c</span>
+      <span><i>model</i> big-pickle</span>
+      <span><i>cost</i> 42.1s</span>
+      <span><i>tokens</i> 3,204</span>
+      <span class="record-bar__state">done</span>
+    </div>
+  </section>
+
+  <section class="band" id="isolation" aria-labelledby="isolation-title">
+    <div class="band__aside" aria-hidden="true">
+      <div class="throat">
+        <span class="throat__rule"></span>
+        <span class="throat__back"></span>
+        <span class="throat__out"></span>
+      </div>
+    </div>
+    <div class="band__body">
+      <h2 id="isolation-title">Two harnesses, one conversation.</h2>
+      <p>
+        DSH stays the driver. opencode brings its own models, tools and free tier, and nothing it
+        does lands in your context or your token bill. The child receives the task text and the
+        working directory. Not the history, not the plan, not the files it did not ask for.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" id="records" aria-labelledby="records-title">
+    <header class="section__head">
+      <h2 id="records-title">Every run leaves a record.</h2>
+      <p>
+        The plugin speaks ACP itself, so it keeps the session id, model, duration, tool calls and
+        tokens that the official provider drops. The last row is a real failure, kept because it is
+        the one that tells you what to fix.
+      </p>
+      <p class="note">Example record. Fields match <code>runs.json</code>.</p>
+    </header>
+
+    <div class="table-wrap">
+      <table class="records">
+        <caption class="sr-only">Example run records</caption>
+        <thead>
+          <tr>
+            <th scope="col">started</th>
+            <th scope="col">model</th>
+            <th scope="col">dir</th>
+            <th scope="col">ms</th>
+            <th scope="col">tokens</th>
+            <th scope="col">state</th>
+            <th scope="col"><span class="sr-only">detail</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="records__row" data-row="1">
+            <th scope="row">11:42:07</th>
+            <td>opencode/deepseek-v4.1-flash-free</td>
+            <td>repo/web</td>
+            <td class="num">6,317</td>
+            <td class="num">↑13,543 ↓81</td>
+            <td><span class="dot dot--ok" aria-hidden="true"></span>completed</td>
+            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-1" aria-label="Show run detail">+</button></td>
+          </tr>
+          <tr class="records__detail" id="detail-1" hidden>
+            <td colspan="7">
+              <span>session <code>ses_e65a42f4bffeGE7vnHDIydlA2W</code></span>
+              <span>tool calls 1</span>
+              <span>cache read 1,536</span>
+            </td>
+          </tr>
+          <tr class="records__row" data-row="2">
+            <th scope="row">11:36:22</th>
+            <td>opencode-go/deepseek-v4.1-flash</td>
+            <td>repo/api</td>
+            <td class="num">4,102</td>
+            <td class="num">↑8,914 ↓204</td>
+            <td><span class="dot dot--ok" aria-hidden="true"></span>completed</td>
+            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-2" aria-label="Show run detail">+</button></td>
+          </tr>
+          <tr class="records__detail" id="detail-2" hidden>
+            <td colspan="7">
+              <span>session <code>ses_e88b32371ffevUU9BrCsAglXe7</code></span>
+              <span>tool calls 1</span>
+              <span>cache read 0</span>
+            </td>
+          </tr>
+          <tr class="records__row" data-row="3">
+            <th scope="row">10:58:03</th>
+            <td>opencode/glm-5.3-flash-free</td>
+            <td>repo/docs</td>
+            <td class="num">31,884</td>
+            <td class="num">↑21,077 ↓1,340</td>
+            <td><span class="dot dot--ok" aria-hidden="true"></span>completed</td>
+            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-3" aria-label="Show run detail">+</button></td>
+          </tr>
+          <tr class="records__detail" id="detail-3" hidden>
+            <td colspan="7">
+              <span>session <code>ses_ea8efeda0fferBUYDHH9Kd2RcL</code></span>
+              <span>tool calls 4</span>
+              <span>cache read 9,472</span>
+            </td>
+          </tr>
+          <tr class="records__row records__row--fault" data-row="4">
+            <th scope="row">10:03:11</th>
+            <td>opencode/deepseek-v4.1-flash-free</td>
+            <td>repo/web</td>
+            <td class="num">3,967</td>
+            <td class="num">—</td>
+            <td><span class="dot dot--fault" aria-hidden="true"></span>free-limit</td>
+            <td><button class="disclose" type="button" aria-expanded="false" aria-controls="detail-4" aria-label="Show run detail">+</button></td>
+          </tr>
+          <tr class="records__detail" id="detail-4" hidden>
+            <td colspan="7">
+              <span class="fault">stage prompt · category free-limit</span>
+              <span>Free usage limit reached. Connect a provider or subscribe to OpenCode Go to keep going, or switch models.</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section how" id="how" aria-labelledby="how-title">
+    <div class="how__sticky">
+      <h2 id="how-title">Six frames. One answer.</h2>
+      <p>
+        DSH speaks ACP itself, so it can keep what the official provider drops: the session id on
+        the child side, the model that ran, the duration, the tokens.
+      </p>
+      <div class="rail" aria-hidden="true"><span class="rail__fill"></span></div>
+    </div>
+    <ol class="frames">
+      <li class="frame">
+        <p class="frame__head"><span class="frame__method">initialize</span><span class="frame__dir">out</span></p>
+        <p>Protocol version, client capabilities. The child agrees to speak ACP before anything is asked of it.</p>
+      </li>
+      <li class="frame">
+        <p class="frame__head"><span class="frame__method">session/new</span><span class="frame__dir">out</span></p>
+        <p>A session is created inside opencode, bound to the directory the delegation was started from.</p>
+      </li>
+      <li class="frame">
+        <p class="frame__head"><span class="frame__method">session/prompt</span><span class="frame__dir">out</span></p>
+        <p>The task text crosses the boundary. That is the whole payload: no history, no attachments, no parent context.</p>
+      </li>
+      <li class="frame">
+        <p class="frame__head"><span class="frame__method">agent_message_chunk</span><span class="frame__dir frame__dir--in">in</span></p>
+        <p>The answer streams back as chunks. Only text is collected; tool traffic stays in the child's session.</p>
+      </li>
+      <li class="frame">
+        <p class="frame__head"><span class="frame__method">usage_update</span><span class="frame__dir frame__dir--in">in</span></p>
+        <p>Tokens this run spent, recorded beside the model and duration when the answer lands.</p>
+      </li>
+      <li class="frame">
+        <p class="frame__head"><span class="frame__method">record</span><span class="frame__dir">write</span></p>
+        <p>Session id, model, milliseconds, tool calls, usage. Readable in the settings page as soon as the run settles.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section class="section" id="models" aria-labelledby="models-title">
+    <header class="section__head">
+      <h2 id="models-title">Its free tier, not yours.</h2>
+      <p>
+        Refresh opencode's catalog from Settings, then spend one real request to test the saved
+        model before you trust it. Free quota is per account and moves; the page tells you which
+        model answered and which one refused.
+      </p>
+    </header>
+    <dl class="facts">
+      <div><dt>Refresh catalog</dt><dd><code>opencode models</code> → free-tier entries merged into the picker, cached in <code>catalog.json</code></dd></div>
+      <div><dt>Test model</dt><dd>one throwaway ACP session against the saved model; the failure text is kept as the record's diagnostic</dd></div>
+      <div><dt>Settings</dt><dd>model, small model, permission policy, working directory — read at the start of every delegation</dd></div>
+      <div><dt>Failure you can read</dt><dd><code>provider.free-limit</code> · <code>provider.internal</code> · exit code · bounded stderr tail</dd></div>
+    </dl>
+  </section>
+
+  <section class="section install" id="install" aria-labelledby="install-title">
+    <header class="section__head">
+      <h2 id="install-title">Install it, then send one delegation.</h2>
+      <p>Requirements: DSH <code>&gt;=0.2.1-rc.1 &lt;0.3.0</code>, opencode v2 with the <code>acp</code> subcommand, and an existing opencode login.</p>
+    </header>
+
+    <div class="steps">
+      <div class="step">
+        <p class="step__label">Add the plugin</p>
+        <div class="cmd">
+          <code>dsh plugin --profile default add dsh-opencode-acp</code>
+          <button class="btn btn--small" type="button" data-copy="dsh plugin --profile default add dsh-opencode-acp"><span class="btn__label">Copy</span><span class="btn__mark" aria-hidden="true"></span></button>
+        </div>
+      </div>
+      <div class="step">
+        <p class="step__label">Set the model</p>
+        <p class="step__text">Settings → OpenCode 委派. Refresh the catalog, test one model, keep it.</p>
+      </div>
+      <div class="step">
+        <p class="step__label">Delegate</p>
+        <p class="step__text">Ask your agent, or call <code>subagent_opencode</code> directly. The answer arrives as a completion notice.</p>
+      </div>
+    </div>
+
+    <div class="actions actions--end">
+      <button class="btn btn--primary" type="button" data-copy="dsh plugin --profile default add dsh-opencode-acp"><span class="btn__label">Copy install command</span><span class="btn__mark" aria-hidden="true"></span></button>
+      <a class="link" href="https://github.com/wangqingdhuo/dsh-opencode-acp#readme" rel="noopener">Read the source</a>
+    </div>
+
+    <p class="limits">
+      Limits, in the same breath: one-shot, no follow-ups · a fresh process per run · the child runs
+      as you and is not sandboxed · the local settings routes are unauthenticated by design, bound to
+      loopback.
+    </p>
+  </section>
+</main>
+
+<footer class="foot">
+  <span>MIT · <a href="https://github.com/wangqingdhuo/dsh-opencode-acp" rel="noopener">wangqingdhuo/dsh-opencode-acp</a></span>
+  <span class="foot__note">Record values are example data from a real machine.</span>
+</footer>
+
+<div class="status" id="status" role="status" aria-live="polite"></div>
+<script src="site.js"></script>
+</body>
+</html>

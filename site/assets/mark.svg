@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" role="img" aria-label="dsh-opencode-acp">
+  <rect width="24" height="24" fill="#0b1015"/>
+  <path d="M3 12h7.5" stroke="#8ca0b2" stroke-width="1.4"/>
+  <path d="M13.5 12H21" stroke="#f0a03a" stroke-width="1.4"/>
+  <circle cx="12" cy="12" r="1.6" fill="#e9e4d9"/>
+  <path d="M12 3v5.2M12 15.8V21" stroke="rgba(140,160,178,.55)" stroke-width="1"/>
+</svg>
