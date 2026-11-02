@@ -21,6 +21,7 @@
       'hero.lead': '一个任务离开你的对话，进入 opencode 自己的进程，用它自己的模型跑完。答案回来，别的都不回来。',
       'hero.cta': '复制安装命令',
       'hero.secondary': '看源码',
+      'hero.tagline': 'Two harnesses, one conversation.<br>The child takes the task and returns only the answer.',
       'wire.out': '发出',
       'wire.in': '返回',
       'wire.caption': '一次运行，已缩短。方法名就是 README 里写的那些。',
@@ -108,6 +109,7 @@
         'One task leaves your conversation. opencode runs it in its own process, with its own models. The answer comes back. Nothing else does.',
       'hero.cta': 'Copy install command',
       'hero.secondary': 'Read the source',
+      'hero.tagline': '两条 harness，一段对话。<br>子进程带走任务，只把答案送回来。',
       'wire.out': 'out',
       'wire.in': 'in',
       'wire.caption': 'One run, shortened. Method names are the ones the README documents.',
@@ -251,6 +253,9 @@
         cell.setAttribute('data-label', t(key));
       });
     });
+
+    var tagline = document.querySelector('.zh');
+    if (tagline) tagline.setAttribute('lang', lang === 'zh' ? 'en' : 'zh-Hans');
 
     var navMark = document.querySelector('.nav__mark');
     if (navMark) navMark.setAttribute('aria-label', t('a11y.navMark'));
