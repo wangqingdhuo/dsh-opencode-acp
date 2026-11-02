@@ -1,0 +1,807 @@
+{
+ "headings": [
+  {
+   "tag": "H1",
+   "text": "Run opencode as a subagent inside DeepSeek Harness."
+  },
+  {
+   "tag": "H2",
+   "text": "Two harnesses, one conversation."
+  },
+  {
+   "tag": "H2",
+   "text": "Every run leaves a record."
+  },
+  {
+   "tag": "H2",
+   "text": "Six frames. One answer."
+  },
+  {
+   "tag": "H2",
+   "text": "Its free tier, not yours."
+  },
+  {
+   "tag": "H2",
+   "text": "Install it, then send one delegation."
+  }
+ ],
+ "h1_count": 1,
+ "names": [
+  {
+   "tag": "a",
+   "text": "Skip to content",
+   "ariaLabel": null,
+   "byLabel": "",
+   "name": "Skip to content",
+   "empty": false
+  },
+  {
+   "tag": "a",
+   "text": "dsh-opencode-acp",
+   "ariaLabel": "dsh-opencode-acp, top of page",
+   "byLabel": "",
+   "name": "dsh-opencode-acp, top of page",
+   "empty": false
+  },
+  {
+   "tag": "a",
+   "text": "npm",
+   "ariaLabel": null,
+   "byLabel": "",
+   "name": "npm",
+   "empty": false
+  },
+  {
+   "tag": "a",
+   "text": "GitHub",
+   "ariaLabel": null,
+   "byLabel": "",
+   "name": "GitHub",
+   "empty": false
+  },
+  {
+   "tag": "button",
+   "text": "Copy install command",
+   "ariaLabel": null,
+   "byLabel": "",
+   "name": "Copy install command",
+   "empty": false
+  },
+  {
+   "tag": "a",
+   "text": "Read the source",
+   "ariaLabel": null,
+   "byLabel": "",
+   "name": "Read the source",
+   "empty": false
+  },
+  {
+   "tag": "button",
+   "text": "+",
+   "ariaLabel": "Show run detail",
+   "byLabel": "",
+   "name": "Show run detail",
+   "empty": false
+  },
+  {
+   "tag": "button",
+   "text": "+",
+   "ariaLabel": "Show run detail",
+   "byLabel": "",
+   "name": "Show run detail",
+   "empty": false
+  },
+  {
+   "tag": "button",
+   "text": "+",
+   "ariaLabel": "Show run detail",
+   "byLabel": "",
+   "name": "Show run detail",
+   "empty": false
+  },
+  {
+   "tag": "button",
+   "text": "+",
+   "ariaLabel": "Show run detail",
+   "byLabel": "",
+   "name": "Show run detail",
+   "empty": false
+  },
+  {
+   "tag": "button",
+   "text": "Copy",
+   "ariaLabel": null,
+   "byLabel": "",
+   "name": "Copy",
+   "empty": false
+  },
+  {
+   "tag": "button",
+   "text": "Copy install command",
+   "ariaLabel": null,
+   "byLabel": "",
+   "name": "Copy install command",
+   "empty": false
+  },
+  {
+   "tag": "a",
+   "text": "Read the source",
+   "ariaLabel": null,
+   "byLabel": "",
+   "name": "Read the source",
+   "empty": false
+  },
+  {
+   "tag": "a",
+   "text": "wangqingdhuo/dsh-opencode-acp",
+   "ariaLabel": null,
+   "byLabel": "",
+   "name": "wangqingdhuo/dsh-opencode-acp",
+   "empty": false
+  }
+ ],
+ "contrast": [
+  {
+   "sel": "body",
+   "note": "body 17px",
+   "color": "rgb(233, 228, 217)",
+   "opacity": 1,
+   "fs": "17px",
+   "fw": "400",
+   "bgNote": {
+    "r": 11,
+    "g": 16,
+    "b": 21
+   },
+   "ratio": 15.07
+  },
+  {
+   "sel": ".lead",
+   "note": "hero lead",
+   "color": "rgb(233, 228, 217)",
+   "opacity": 1,
+   "fs": "19px",
+   "fw": "400",
+   "bgNote": {
+    "r": 11,
+    "g": 16,
+    "b": 21
+   },
+   "ratio": 15.07
+  },
+  {
+   "sel": ".kicker",
+   "note": "orange kicker 12px",
+   "color": "rgb(240, 160, 58)",
+   "opacity": 1,
+   "fs": "12px",
+   "fw": "400",
+   "bgNote": {
+    "r": 11,
+    "g": 16,
+    "b": 21
+   },
+   "ratio": 8.91
+  },
+  {
+   "sel": ".zh",
+   "note": "zh 14.5px dim",
+   "color": "rgb(140, 160, 178)",
+   "opacity": 1,
+   "fs": "14.5px",
+   "fw": "400",
+   "bgNote": {
+    "r": 11,
+    "g": 16,
+    "b": 21
+   },
+   "ratio": 7.08
+  },
+  {
+   "sel": ".nav__version",
+   "note": "version chip",
+   "color": "rgb(140, 160, 178)",
+   "opacity": 0.75,
+   "fs": "13px",
+   "fw": "400",
+   "bgNote": {
+    "r": 11,
+    "g": 16,
+    "b": 21
+   },
+   "ratio": 4.45,
+   "FAIL": true
+  },
+  {
+   "sel": ".nav__links a",
+   "note": "nav link",
+   "color": "rgb(140, 160, 178)",
+   "opacity": 1,
+   "fs": "13px",
+   "fw": "400",
+   "bgNote": {
+    "r": 11,
+    "g": 16,
+    "b": 21
+   },
+   "ratio": 7.08
+  },
+  {
+   "sel": ".wire__caption",
+   "note": "wire caption",
+   "color": "rgb(140, 160, 178)",
+   "opacity": 0.8,
+   "fs": "11.5px",
+   "fw": "400",
+   "bgNote": {
+    "r": 11,
+    "g": 16,
+    "b": 21
+   },
+   "ratio": 4.91
+  },
+  {
+   "sel": ".wire__legend",
+   "note": "wire legend 11.5px",
+   "color": "rgb(140, 160, 178)",
+   "opacity": 1,
+   "fs": "11.5px",
+   "fw": "400",
+   "bgNote": {
+    "r": 11,
+    "g": 16,
+    "b": 21
+   },
+   "ratio": 7.08
+  },
+  {
+   "sel": ".record-bar span",
+   "note": "record bar value",
+   "color": "rgb(233, 228, 217)",
+   "opacity": 1,
+   "fs": "12.5px",
+   "fw": "400",
+   "bgNote": {
+    "r": 11,
+    "g": 16,
+    "b": 21
+   },
+   "ratio": 15.07
+  },
+  {
+   "sel": ".records thead th",
+   "note": "table head 11px",
+   "color": "rgb(140, 160, 178)",
+   "opacity": 1,
+   "fs": "11px",
+   "fw": "400",
+   "bgNote": {
+    "r": 11,
+    "g": 16,
+    "b": 21
+   },
+   "ratio": 7.08
+  },
+  {
+   "sel": ".records tbody th",
+   "note": "table row head",
+   "color": "rgb(140, 160, 178)",
+   "opacity": 1,
+   "fs": "12.5px",
+   "fw": "400",
+   "bgNote": {
+    "r": 11,
+    "g": 16,
+    "b": 21
+   },
+   "ratio": 7.08
+  },
+  {
+   "sel": ".records__row--fault td",
+   "note": "fault text",
+   "color": "rgb(224, 101, 90)",
+   "opacity": 1,
+   "fs": "12.5px",
+   "fw": "400",
+   "bgNote": {
+    "r": 11,
+    "g": 16,
+    "b": 21
+   },
+   "ratio": 5.62
+  },
+  {
+   "sel": ".frame p:last-child",
+   "note": "frame body (unpassed)",
+   "color": "rgb(140, 160, 178)",
+   "opacity": 0.42,
+   "fs": "16px",
+   "fw": "400",
+   "bgNote": {
+    "r": 11,
+    "g": 16,
+    "b": 21
+   },
+   "ratio": 2.19,
+   "FAIL": true
+  },
+  {
+   "sel": ".section__head .note",
+   "note": "example-record note",
+   "color": "rgb(140, 160, 178)",
+   "opacity": 1,
+   "fs": "12px",
+   "fw": "400",
+   "bgNote": {
+    "r": 11,
+    "g": 16,
+    "b": 21
+   },
+   "ratio": 7.08
+  },
+  {
+   "sel": ".step__text",
+   "note": "step text dim",
+   "color": "rgb(140, 160, 178)",
+   "opacity": 1,
+   "fs": "15px",
+   "fw": "400",
+   "bgNote": {
+    "r": 11,
+    "g": 16,
+    "b": 21
+   },
+   "ratio": 7.08
+  },
+  {
+   "sel": ".limits",
+   "note": "limits 12px",
+   "color": "rgb(140, 160, 178)",
+   "opacity": 1,
+   "fs": "12px",
+   "fw": "400",
+   "bgNote": {
+    "r": 11,
+    "g": 16,
+    "b": 21
+   },
+   "ratio": 7.08
+  },
+  {
+   "sel": ".foot__note",
+   "note": "footer note",
+   "color": "rgb(140, 160, 178)",
+   "opacity": 0.7,
+   "fs": "12px",
+   "fw": "400",
+   "bgNote": {
+    "r": 11,
+    "g": 16,
+    "b": 21
+   },
+   "ratio": 4.02,
+   "FAIL": true
+  },
+  {
+   "sel": ".btn--primary",
+   "note": "primary btn label",
+   "color": "rgb(11, 16, 21)",
+   "opacity": 1,
+   "fs": "13px",
+   "fw": "400",
+   "bgNote": {
+    "r": 11,
+    "g": 16,
+    "b": 21
+   },
+   "ratio": 1,
+   "FAIL": true
+  }
+ ],
+ "table": {
+  "caption": "Example run records",
+  "captionVisible": "absolute",
+  "scopes": [
+   "col",
+   "col",
+   "col",
+   "col",
+   "col",
+   "col",
+   "col",
+   "row",
+   "row",
+   "row",
+   "row"
+  ],
+  "tableRole": null,
+  "theadDisplayAtDesktop": "table-header-group"
+ },
+ "aria": {
+  "legendHidden": "true",
+  "staticDisplay": "none",
+  "staticAriaLabel": "One shortened run",
+  "canvasHidden": "true",
+  "recordBarLabel": "Example run record",
+  "recordBarRole": null,
+  "statusRole": "status",
+  "statusLive": "polite"
+ },
+ "landmarks": [
+  "header",
+  "nav",
+  "main",
+  "section[hero-title]",
+  "section[isolation-title]",
+  "section[records-title]",
+  "header",
+  "section[how-title]",
+  "section[models-title]",
+  "header",
+  "section[install-title]",
+  "header",
+  "footer"
+ ],
+ "focus_steps": [
+  {
+   "tag": "a",
+   "cls": "skip",
+   "text": "Skip to content",
+   "focusVisible": true,
+   "outline": "2px solid rgb(240, 160, 58)",
+   "outlineOffset": "3px"
+  },
+  {
+   "tag": "a",
+   "cls": "nav__mark",
+   "text": "dsh-opencode-acp, top of page",
+   "focusVisible": true,
+   "outline": "2px solid rgb(240, 160, 58)",
+   "outlineOffset": "3px"
+  },
+  {
+   "tag": "a",
+   "cls": "",
+   "text": "npm",
+   "focusVisible": true,
+   "outline": "2px solid rgb(240, 160, 58)",
+   "outlineOffset": "3px"
+  },
+  {
+   "tag": "a",
+   "cls": "",
+   "text": "GitHub",
+   "focusVisible": true,
+   "outline": "2px solid rgb(240, 160, 58)",
+   "outlineOffset": "3px"
+  },
+  {
+   "tag": "button",
+   "cls": "btn btn--primary",
+   "text": "Copy install command",
+   "focusVisible": true,
+   "outline": "2px solid rgb(240, 160, 58)",
+   "outlineOffset": "3px"
+  },
+  {
+   "tag": "a",
+   "cls": "link",
+   "text": "Read the source",
+   "focusVisible": true,
+   "outline": "2px solid rgb(240, 160, 58)",
+   "outlineOffset": "3px"
+  },
+  {
+   "tag": "button",
+   "cls": "disclose",
+   "text": "Show run detail",
+   "focusVisible": true,
+   "outline": "2px solid rgb(240, 160, 58)",
+   "outlineOffset": "3px"
+  },
+  {
+   "tag": "button",
+   "cls": "disclose",
+   "text": "Show run detail",
+   "focusVisible": true,
+   "outline": "2px solid rgb(240, 160, 58)",
+   "outlineOffset": "3px"
+  },
+  {
+   "tag": "button",
+   "cls": "disclose",
+   "text": "Show run detail",
+   "focusVisible": true,
+   "outline": "2px solid rgb(240, 160, 58)",
+   "outlineOffset": "3px"
+  },
+  {
+   "tag": "button",
+   "cls": "disclose",
+   "text": "Show run detail",
+   "focusVisible": true,
+   "outline": "2px solid rgb(240, 160, 58)",
+   "outlineOffset": "3px"
+  },
+  {
+   "tag": "button",
+   "cls": "btn btn--small",
+   "text": "Copy",
+   "focusVisible": true,
+   "outline": "2px solid rgb(240, 160, 58)",
+   "outlineOffset": "3px"
+  },
+  {
+   "tag": "button",
+   "cls": "btn btn--primary",
+   "text": "Copy install command",
+   "focusVisible": true,
+   "outline": "2px solid rgb(240, 160, 58)",
+   "outlineOffset": "3px"
+  },
+  {
+   "tag": "a",
+   "cls": "link",
+   "text": "Read the source",
+   "focusVisible": true,
+   "outline": "2px solid rgb(240, 160, 58)",
+   "outlineOffset": "3px"
+  },
+  {
+   "tag": "a",
+   "cls": "",
+   "text": "wangqingdhuo/dsh-opencode-acp",
+   "focusVisible": true,
+   "outline": "2px solid rgb(240, 160, 58)",
+   "outlineOffset": "3px"
+  }
+ ],
+ "align_1440": {
+  "navMark": 48,
+  "navRight": 1392,
+  "h1": 168,
+  "kicker": 168,
+  "foot": 120,
+  "vw": 1440
+ },
+ "align_1920": {
+  "navMark": 48,
+  "h1": 408,
+  "foot": 360,
+  "vw": 1920
+ },
+ "wide768": {
+  "vw": 768,
+  "scrollW": 772,
+  "bodyScrollW": 768,
+  "res": [
+   {
+    "tag": "table",
+    "cls": "records",
+    "right": 810.7,
+    "w": 780,
+    "sw": 780,
+    "cw": 780
+   },
+   {
+    "tag": "thead",
+    "cls": "",
+    "right": 810.7,
+    "w": 780,
+    "sw": 780,
+    "cw": 780
+   },
+   {
+    "tag": "tr",
+    "cls": "",
+    "right": 810.7,
+    "w": 780,
+    "sw": 780,
+    "cw": 780
+   },
+   {
+    "tag": "th",
+    "cls": "",
+    "right": 771.7,
+    "w": 109.7,
+    "sw": 110,
+    "cw": 110
+   },
+   {
+    "tag": "th",
+    "cls": "",
+    "right": 810.7,
+    "w": 39,
+    "sw": 39,
+    "cw": 39
+   },
+   {
+    "tag": "span",
+    "cls": "sr-only",
+    "right": 771.7,
+    "w": 1,
+    "sw": 39,
+    "cw": 1
+   },
+   {
+    "tag": "tbody",
+    "cls": "",
+    "right": 810.7,
+    "w": 780,
+    "sw": 780,
+    "cw": 780
+   },
+   {
+    "tag": "tr",
+    "cls": "records__row",
+    "right": 810.7,
+    "w": 780,
+    "sw": 780,
+    "cw": 780
+   },
+   {
+    "tag": "td",
+    "cls": "",
+    "right": 771.7,
+    "w": 109.7,
+    "sw": 110,
+    "cw": 110
+   },
+   {
+    "tag": "td",
+    "cls": "",
+    "right": 810.7,
+    "w": 39,
+    "sw": 39,
+    "cw": 39
+   },
+   {
+    "tag": "button",
+    "cls": "disclose",
+    "right": 793.7,
+    "w": 22,
+    "sw": 20,
+    "cw": 20
+   },
+   {
+    "tag": "tr",
+    "cls": "records__row",
+    "right": 810.7,
+    "w": 780,
+    "sw": 780,
+    "cw": 780
+   },
+   {
+    "tag": "td",
+    "cls": "",
+    "right": 771.7,
+    "w": 109.7,
+    "sw": 110,
+    "cw": 110
+   },
+   {
+    "tag": "td",
+    "cls": "",
+    "right": 810.7,
+    "w": 39,
+    "sw": 39,
+    "cw": 39
+   },
+   {
+    "tag": "button",
+    "cls": "disclose",
+    "right": 793.7,
+    "w": 22,
+    "sw": 20,
+    "cw": 20
+   },
+   {
+    "tag": "tr",
+    "cls": "records__row",
+    "right": 810.7,
+    "w": 780,
+    "sw": 780,
+    "cw": 780
+   },
+   {
+    "tag": "td",
+    "cls": "",
+    "right": 771.7,
+    "w": 109.7,
+    "sw": 110,
+    "cw": 110
+   },
+   {
+    "tag": "td",
+    "cls": "",
+    "right": 810.7,
+    "w": 39,
+    "sw": 39,
+    "cw": 39
+   },
+   {
+    "tag": "button",
+    "cls": "disclose",
+    "right": 793.7,
+    "w": 22,
+    "sw": 20,
+    "cw": 20
+   },
+   {
+    "tag": "tr",
+    "cls": "records__row records__row--fault",
+    "right": 810.7,
+    "w": 780,
+    "sw": 780,
+    "cw": 780
+   }
+  ]
+ },
+ "nav360": {
+  "navW": 360,
+  "navScrollW": 360,
+  "markH": 42.1,
+  "markTextH": 42.1,
+  "markText": 113.734375,
+  "linksLeft": 185.7,
+  "linksRight": 340,
+  "linksW": 154.3,
+  "overlap": -24,
+  "docScrollW": 360
+ },
+ "copy_no_permission": {
+  "label": "Copied",
+  "status": "Install command copied",
+  "statusVisible": "1"
+ },
+ "reduced": {
+  "matches": true,
+  "animations": 0,
+  "canvasBlank": true,
+  "canvasDisplay": "block",
+  "canvasBox": {
+   "w": 1104,
+   "h": 120
+  },
+  "staticDisplay": "none",
+  "leadOpacity": "1",
+  "actionsOpacity": "1",
+  "zhOpacity": "1",
+  "h1spanTransform": "none",
+  "frameOpacity": "1",
+  "railFill": "matrix(1, 0, 0, 1, 0, 0)",
+  "recordOpacity": [
+   "1",
+   "1",
+   "1",
+   "1",
+   "1"
+  ],
+  "isReady": true,
+  "canvasDataURL": 1734
+ },
+ "reduced_screens_identical": true,
+ "reduced_canvas_blank_after_9s": {
+  "paintedPixels": 0,
+  "w": 300,
+  "h": 120
+ },
+ "nojs": {
+  "h1Box": {
+   "top": 145,
+   "h": 172
+  },
+  "h1span": "matrix(1, 0, 0, 1, 0, 60.0961)",
+  "leadOpacity": "0",
+  "actionsOpacity": "0",
+  "zhOpacity": "0",
+  "recordOpacity": "0.45",
+  "framesOpacity": "0.42",
+  "railFill": "matrix(1, 0, 0, 0, 0, 0)"
+ },
+ "how_contrast_frame_unpassed": {
+  "opacity": "0.42",
+  "color": "rgb(140, 160, 178)",
+  "passed": false
+ }
+}

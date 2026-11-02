@@ -155,10 +155,10 @@ table). Both are named exports; `cordis.patch.yml` inserts the two rows.
 
 ## Landing page
 
-`site/` is the standalone marketing page (no build step, no CDN, Chinese by default with an `EN`
+`docs/` is the standalone marketing page (no build step, no CDN, Chinese by default with an `EN`
 switch). It is deployed at **http://185.242.234.241/** and served by nginx from
 `/var/www/dsh-opencode-acp`; to host it yourself, upload the folder to any static host or run
-`python -m http.server --directory site 8080`. `?lang=en` links straight to English.
+`python -m http.server --directory docs 8080`. `?lang=en` links straight to English.
 
 ## Licence
 

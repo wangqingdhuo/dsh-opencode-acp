@@ -139,11 +139,11 @@ npm pack --dry-run
 
 ## 官网
 
-`site/` 是独立的宣传页：纯静态、无构建步骤、无 CDN，默认中文、右上角可切英文。
+`docs/` 是独立的宣传页：纯静态、无构建步骤、无 CDN，默认中文、右上角可切英文。
 
 - 线上地址：**http://185.242.234.241/**（`?lang=en` 直达英文版）
-- 部署方式：nginx 从 `/var/www/dsh-opencode-acp` 提供，站点文件就是 `site/` 目录里的四个文件
-- 自己托管：把 `site/` 传到任意静态服务器，或 `python -m http.server --directory site 8080`
+- 部署方式：nginx 从 `/var/www/dsh-opencode-acp` 提供，站点文件就是 `docs/` 目录里的四个文件
+- 自己托管：把 `site/` 传到任意静态服务器，或 `python -m http.server --directory docs 8080`
 
 ## 许可
 

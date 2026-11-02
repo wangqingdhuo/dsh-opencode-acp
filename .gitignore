@@ -5,6 +5,6 @@ dist/
 .DS_Store
 Thumbs.db
 
-site/.shots/
-site/.review/
+docs/.shots/
+docs/.review/
 
