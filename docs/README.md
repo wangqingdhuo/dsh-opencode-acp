@@ -4,7 +4,7 @@ Static landing page for `dsh-opencode-acp`. No build step, no CDN, no external
 fonts or images — upload the folder as it is.
 
 ```
-site/
+docs/
 ├── index.html
 ├── site.css
 ├── site.js       (all copy lives in the I18N table at the top)

@@ -5,6 +5,8 @@ dist/
 .DS_Store
 Thumbs.db
 
+# local browser-review artifacts (screenshots, audit JSON)
+site/.shots/
+site/.review/
 docs/.shots/
 docs/.review/
-
