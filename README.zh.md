@@ -6,7 +6,7 @@
 opencode，由它用**自己的模型、工具和免费额度**干活，只把最终答案带回来。设置页里可以切换模型、
 选择权限策略和工作目录，并查看每一次运行——包括 opencode 那边的会话 id、耗时和 token 用量。
 
-[English](README.md)
+[English](README.md) · **[官网](http://185.242.234.241/)**（默认中文，右上角可切英文）
 
 ## 快速开始
 
@@ -136,6 +136,14 @@ npm pack --dry-run
 宿主半是 `index.js`（ACP 客户端、provider、存储、`/.dsh-opencode-acp` 下的 HTTP 路由），
 浏览器半是 `client.js`（通过客户端模块表注册的 `settings.section` 页面）。两半都是具名导出，
 `cordis.patch.yml` 插入两行。
+
+## 官网
+
+`site/` 是独立的宣传页：纯静态、无构建步骤、无 CDN，默认中文、右上角可切英文。
+
+- 线上地址：**http://185.242.234.241/**（`?lang=en` 直达英文版）
+- 部署方式：nginx 从 `/var/www/dsh-opencode-acp` 提供，站点文件就是 `site/` 目录里的四个文件
+- 自己托管：把 `site/` 传到任意静态服务器，或 `python -m http.server --directory site 8080`
 
 ## 许可
 
