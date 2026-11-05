@@ -99,8 +99,8 @@ DSH agent ── subagent_opencode ──► ctx.subagents ──► dsh-opencod
 | 现象 | 原因与处理 |
 |---|---|
 | 委派失败，`category: free-limit` | opencode 免费额度按账号耗尽。点 **测试模型** 看现在哪个能用，或在 opencode 里接一个付费 provider。 |
-| 委派失败，`category: provider.internal` + \Authentication required\ | 该模型所属 provider 在 opencode 侧还没登录：先 \opencode auth login\，或换一个模型 |
-| 委派失败，`category: provider.internal` + \Model is unavailable\ | 该模型的端点此刻不可用，换一个模型。 |
+| 委派失败，`category: provider.internal` + `Authentication required` | 该模型所属 provider 在 opencode 侧还没登录：先 `opencode auth login`，或换一个模型 |
+| 委派失败，`category: provider.internal` + `Model is unavailable` | 该模型的端点此刻不可用，换一个模型。 |
 | 设置页读不出来 / 空白 | Host 没能注册 `/.dsh-opencode-acp/*`。重启 DSH；仍不行就去插件页确认 bundle 是启用的。 |
 | 委派一直卡住不返回 | 0.3.0 已修：请求进行中若子进程死掉，现在会立即失败而不是挂起。 |
 | Windows 下别的插件报 `EPERM ... rename ... state.json` | 两个 DSH 实例在写同一份 profile 状态。从托盘退出后再启动一个。 |
