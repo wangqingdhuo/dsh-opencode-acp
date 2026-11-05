@@ -112,8 +112,8 @@ DSH agent ── subagent_opencode ──► ctx.subagents ──► dsh-opencod
 | Symptom | Cause and fix |
 |---|---|
 | Delegation fails with `category: free-limit` | opencode's free tier is exhausted for the account. Click **测试模型** to see which model works now, or connect a provider in opencode. |
-| Delegation fails with `category: provider.internal` + Authentication required | that model's provider is not logged in on the opencode side: run `opencode auth login`, or pick another model |
-| Delegation fails with `category: provider.internal` + \Model is unavailable\ | that model's endpoint is down right now; pick another one |
+| Delegation fails with `category: provider.internal` + `Authentication required` | that model's provider is not logged in on the opencode side: run `opencode auth login`, or pick another model |
+| Delegation fails with `category: provider.internal` + `Model is unavailable` | that model's endpoint is down right now; pick another one |
 | The settings page shows a read error or is blank | the Host could not register `/.dsh-opencode-acp/*`. Restart DSH; if it persists, check that the bundle is enabled in Plugins. |
 | `卡住` on a delegation that never returns | fixed in 0.3.0: a child that dies mid-request now fails the run instead of leaving it pending |
 | Windows: `EPERM ... rename ... state.json` from another plugin | two DSH instances writing the same profile state. Quit from the tray and start once. |
