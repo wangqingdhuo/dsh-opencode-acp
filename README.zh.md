@@ -66,7 +66,7 @@ dsh plugin --profile default add ./dsh-opencode-acp-0.3.1.tgz
 | 模型 | 小模型 | opencode 生成标题/小任务用的模型（留空让它自己挑） |
 | 模型 | 健康检查 | 跑一次 `opencode --version`，确认可执行文件找得到 |
 | 模型 | 测试当前模型 | 用**已保存的**模型起一个一次性会话，当场告诉你能不能跑（会真实消耗一次请求） |
-| 模型 | 刷新列表 | 跑一次 `opencode models`，把免费档模型并进下拉；结果缓存在 `catalog.json`，只花一次短子进程、不消耗请求 |
+| 模型 | 刷新列表 | 跑一次 `opencode models`，把免费档模型并进下拉；结果缓存在 `catalog.json`，只花一次短子进程、不消耗请求。缓存超过 6 小时时，打开设置页会自动刷新一次 |
 | 执行 | 权限应答 | `allow` 自动放行权限请求，`reject` 一律拒绝 |
 | 执行 | 工作目录 | 跟随调用方会话，或固定一个路径 |
 | 高级 | 命令 / 参数 | opencode 可执行文件 + `acp` 参数 |
@@ -99,7 +99,8 @@ DSH agent ── subagent_opencode ──► ctx.subagents ──► dsh-opencod
 | 现象 | 原因与处理 |
 |---|---|
 | 委派失败，`category: free-limit` | opencode 免费额度按账号耗尽。点 **测试模型** 看现在哪个能用，或在 opencode 里接一个付费 provider。 |
-| 委派失败，`category: provider.internal` + "Model is unavailable" | 该模型的端点此刻不可用，换一个模型。 |
+| 委派失败，`category: provider.internal` + \Authentication required\ | 该模型所属 provider 在 opencode 侧还没登录：先 \opencode auth login\，或换一个模型 |
+| 委派失败，`category: provider.internal` + \Model is unavailable\ | 该模型的端点此刻不可用，换一个模型。 |
 | 设置页读不出来 / 空白 | Host 没能注册 `/.dsh-opencode-acp/*`。重启 DSH；仍不行就去插件页确认 bundle 是启用的。 |
 | 委派一直卡住不返回 | 0.3.0 已修：请求进行中若子进程死掉，现在会立即失败而不是挂起。 |
 | Windows 下别的插件报 `EPERM ... rename ... state.json` | 两个 DSH 实例在写同一份 profile 状态。从托盘退出后再启动一个。 |

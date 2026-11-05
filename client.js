@@ -481,6 +481,7 @@ window.__ModuleLoader__.load({
           runs: Array.isArray(raw.runs) ? raw.runs.filter((item) => item && typeof item === 'object') : [],
           home: typeof raw.home === 'string' ? raw.home : '',
           catalog: normalizeCatalog(raw.catalog),
+          catalogStale: raw.catalogStale === true,
         },
       }
     }
@@ -742,6 +743,7 @@ window.__ModuleLoader__.load({
       const [probe, setProbe] = useState(null)
       const [health, setHealth] = useState(null)
       const [catalogOverride, setCatalogOverride] = useState(null)
+      const autoCatalogRef = useRef(false)
 
       /* history */
       const [openRun, setOpenRun] = useState(null)
@@ -937,7 +939,8 @@ window.__ModuleLoader__.load({
         }
       }
 
-      const refreshCatalog = async () => {
+      const refreshCatalog = async (options) => {
+        const silent = Boolean(options && options.silent)
         if (anyBusy) return
         begin('catalog')
         setError('')
@@ -953,7 +956,7 @@ window.__ModuleLoader__.load({
                 free: String(Array.isArray(result.free) ? result.free.length : 0),
               }),
             )
-          } else {
+          } else if (!silent) {
             setError(
               t('catalogFail', {
                 detail: asText(result && result.detail, t('reasonUnknown')),
@@ -961,11 +964,19 @@ window.__ModuleLoader__.load({
             )
           }
         } catch (cause) {
-          setError(t('catalogFail', { detail: describeActionFailure(cause) }))
+          if (!silent) setError(t('catalogFail', { detail: describeActionFailure(cause) }))
         } finally {
           end('catalog')
         }
       }
+
+      /* opencode adds and retires free models between visits; a cache older than
+       * a few hours is refreshed once on its own so the picker is not a museum. */
+      useEffect(() => {
+        if (!data.catalogStale || autoCatalogRef.current) return
+        autoCatalogRef.current = true
+        void refreshCatalog({ silent: true })
+      }, [data.catalogStale, refreshCatalog])
 
       const refresh = async () => {        if (anyBusy) return
         begin('refresh')

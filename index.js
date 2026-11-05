@@ -48,15 +48,21 @@ const DEFAULT_MODEL = 'opencode/deepseek-v4.1-flash-free'
  * them even on a machine that has never run them; availability still varies
  * (per-account free quota, model endpoints), which is what 测试当前模型 answers.
  */
+/* Only a first paint: the live list comes from `opencode models` (the 刷新列表
+ * button) and from opencode's own recent/favourite state. Keep this roughly
+ * current so a fresh install is usable before the first refresh. */
 const FALLBACK_MODELS = [
-  'opencode-go/iceman-contributor-free',
+  'opencode/crouton-alpha-free',
+  'opencode/pulse-alpha-free',
   'opencode/deepseek-v4.1-flash-free',
   'opencode/glm-5.3-flash-free',
   'opencode/mimo-v2.6-flash-free',
   'opencode/flint-40b-free',
   'opencode/nemotron-3.5-lightning-free',
-  'opencode/nemotron-3-ultra-free',
+  'opencode/nemotron-3.5-super-vl-free',
   'opencode/beam-free',
+  'opencode-go/iceman-contributor-free',
+  'opencode-go/beam-free',
 ]
 const DEFAULT_SETTINGS = {
   model: DEFAULT_MODEL,
@@ -242,6 +248,8 @@ function opencodeModels() {
 
 /** `opencode models` output cap and bound; a stale cache is better than a hung page. */
 const CATALOG_MAX_BYTES = 4 * 1024 * 1024
+/** A cached catalog older than this is reported as stale so the page refreshes it. */
+const CATALOG_TTL_MS = 6 * 60 * 60 * 1000
 const CATALOG_TIMEOUT_MS = 30000
 
 /** Split `opencode models` output into the total count and the free-tier subset. */
@@ -1154,6 +1162,7 @@ function registerRoutes(ctx, store, state) {
             settings: store.settings,
             models: opencodeModels(),
             catalog: store.catalog,
+            catalogStale: store.catalog === null || Date.now() - Number(store.catalog.at || 0) > CATALOG_TTL_MS,
             runs: store.runs,
             home: homeDirectory(),
             health: state.health,

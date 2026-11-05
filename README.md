@@ -77,7 +77,7 @@ The child gets only your task text and the working directory — never your conv
 | Model | small model | opencode's model for titles and small jobs (blank = let opencode choose) |
 | Model | health check | Runs `opencode --version` and reports whether the executable resolves |
 | Model | test model | Starts one throwaway session against the **saved** model and answers whether it works right now (it spends one real request) |
-| Model | refresh list | Runs `opencode models` and merges the free-tier entries into the picker; cached in `catalog.json`, so it costs one short subprocess, not a request |
+| Model | refresh list | Runs `opencode models` and merges the free-tier entries into the picker; cached in `catalog.json`, so it costs one short subprocess, not a request. The page also refreshes by itself once when the cache is more than 6 hours old. |
 | Execution | permission | `allow` auto-answers permission requests, `reject` denies them |
 | Execution | working directory | Follow the calling session, or pin one path |
 | Advanced | command / args | The opencode executable plus the `acp` argument |
@@ -112,7 +112,8 @@ DSH agent ── subagent_opencode ──► ctx.subagents ──► dsh-opencod
 | Symptom | Cause and fix |
 |---|---|
 | Delegation fails with `category: free-limit` | opencode's free tier is exhausted for the account. Click **测试模型** to see which model works now, or connect a provider in opencode. |
-| Delegation fails with `category: provider.internal` + "Model is unavailable" | that model's endpoint is down right now; pick another one |
+| Delegation fails with `category: provider.internal` + Authentication required | that model's provider is not logged in on the opencode side: run `opencode auth login`, or pick another model |
+| Delegation fails with `category: provider.internal` + \Model is unavailable\ | that model's endpoint is down right now; pick another one |
 | The settings page shows a read error or is blank | the Host could not register `/.dsh-opencode-acp/*`. Restart DSH; if it persists, check that the bundle is enabled in Plugins. |
 | `卡住` on a delegation that never returns | fixed in 0.3.0: a child that dies mid-request now fails the run instead of leaving it pending |
 | Windows: `EPERM ... rename ... state.json` from another plugin | two DSH instances writing the same profile state. Quit from the tray and start once. |
